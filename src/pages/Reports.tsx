@@ -1,6 +1,6 @@
 import { useFinance } from "@/contexts/FinanceContext";
 import {
-  monthlyTrendData,
+  calculateMonthlyTrend,
   formatCurrency,
   defaultCategories,
 } from "@/lib/mock-data";
@@ -21,36 +21,66 @@ import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 
 export default function Reports() {
-  const { transactions, totalIncome, totalExpenses, budgets } = useFinance();
+  const { transactions, totalIncome, totalExpenses } = useFinance();
 
-  const categoryData = budgets.map((b) => {
-    const cat = defaultCategories.find((c) => c.name === b.category);
-    return { name: b.category, value: b.spent, color: cat?.color ?? "hsl(221,83%,53%)" };
-  }).filter((c) => c.value > 0);
+  const dynamicTrend = calculateMonthlyTrend(transactions);
+
+  // Calcula gastos reais por categoria diretamente das transações
+  const categoryExpensesMap = new Map<string, number>();
+  transactions
+    .filter((t) => t.type === "expense")
+    .forEach((t) => {
+      const current = categoryExpensesMap.get(t.category) || 0;
+      categoryExpensesMap.set(t.category, current + t.amount);
+    });
+
+  const categoryData = Array.from(categoryExpensesMap.entries()).map(([name, value]) => {
+    const cat = defaultCategories.find((c) => c.name === name);
+    return {
+      name,
+      value,
+      color: cat?.color ?? "hsl(221,83%,53%)",
+    };
+  });
 
   function downloadCSV() {
     const headers = ["Data", "Tipo", "Categoria", "Descrição", "Valor", "Conta", "Forma de Pagamento"];
     const rows = transactions.map((t) => [
-      t.date, t.type === "income" ? "Receita" : "Despesa", t.category, t.description, t.amount.toFixed(2), t.account, t.paymentMethod,
+      t.date,
+      t.type === "income" ? "Receita" : "Despesa",
+      t.category,
+      t.description,
+      t.amount.toFixed(2),
+      t.account,
+      t.paymentMethod,
     ]);
     const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "relatorio-transacoes.csv";
+    a.download = `relatorio-transacoes-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
 
+  const currentMonthYear = new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-heading">Relatórios</h1>
-          <p className="text-sm text-muted-foreground">Análise financeira de março 2026</p>
+          <h1 className="text-heading">Relatórios e Análise</h1>
+          <p className="text-sm text-muted-foreground capitalize">
+            Visão consolidada · {currentMonthYear}
+          </p>
         </div>
-        <Button variant="outline" size="sm" onClick={downloadCSV}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={downloadCSV}
+          disabled={transactions.length === 0}
+        >
           <Download className="w-4 h-4 mr-2" />
           Exportar CSV
         </Button>
@@ -59,27 +89,53 @@ export default function Reports() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-card rounded-xl shadow-card p-5">
           <span className="text-label">Total de Receitas</span>
-          <p className="font-mono tabular-nums text-xl font-semibold text-success mt-1">{formatCurrency(totalIncome)}</p>
+          <p className="font-mono tabular-nums text-xl font-semibold text-success mt-1">
+            {formatCurrency(totalIncome)}
+          </p>
         </div>
         <div className="bg-card rounded-xl shadow-card p-5">
           <span className="text-label">Total de Despesas</span>
-          <p className="font-mono tabular-nums text-xl font-semibold text-destructive mt-1">{formatCurrency(totalExpenses)}</p>
+          <p className="font-mono tabular-nums text-xl font-semibold text-destructive mt-1">
+            {formatCurrency(totalExpenses)}
+          </p>
         </div>
         <div className="bg-card rounded-xl shadow-card p-5">
           <span className="text-label">Economia Líquida</span>
-          <p className="font-mono tabular-nums text-xl font-semibold mt-1">{formatCurrency(totalIncome - totalExpenses)}</p>
+          <p
+            className={`font-mono tabular-nums text-xl font-semibold mt-1 ${
+              totalIncome - totalExpenses >= 0 ? "text-foreground" : "text-destructive"
+            }`}
+          >
+            {formatCurrency(totalIncome - totalExpenses)}
+          </p>
         </div>
       </div>
 
       <div className="bg-card rounded-xl shadow-card p-5">
-        <h2 className="text-heading mb-4">Receitas vs Despesas</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-heading">Receitas vs Despesas</h2>
+          <span className="text-xs text-muted-foreground">Histórico dinâmico dos últimos 6 meses</span>
+        </div>
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={monthlyTrendData} barGap={4}>
+            <BarChart data={dynamicTrend} barGap={4}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(214,32%,91%)" vertical={false} />
               <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "hsl(215,16%,47%)" }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "hsl(215,16%,47%)" }} tickFormatter={(v) => `R$${v / 1000}k`} />
-              <Tooltip formatter={(value: number) => formatCurrency(value)} contentStyle={{ background: "hsl(0,0%,100%)", border: "1px solid hsl(214,32%,91%)", borderRadius: "8px", fontSize: "13px" }} />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 12, fill: "hsl(215,16%,47%)" }}
+                tickFormatter={(v) => `R$${v >= 1000 ? (v / 1000).toFixed(0) + "k" : v}`}
+              />
+              <Tooltip
+                formatter={(value: number) => formatCurrency(value)}
+                contentStyle={{
+                  background: "hsl(0,0%,100%)",
+                  border: "1px solid hsl(214,32%,91%)",
+                  borderRadius: "8px",
+                  fontSize: "13px",
+                }}
+              />
               <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "12px" }} />
               <Bar dataKey="income" name="Receitas" fill="hsl(142,71%,45%)" radius={[4, 4, 0, 0]} />
               <Bar dataKey="expenses" name="Despesas" fill="hsl(0,84%,60%)" radius={[4, 4, 0, 0]} />
@@ -90,37 +146,53 @@ export default function Reports() {
 
       <div className="bg-card rounded-xl shadow-card p-5">
         <h2 className="text-heading mb-4">Gastos por Categoria</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-3">
-            {categoryData.map((cat) => (
-              <div key={cat.name} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }} />
-                  <span className="text-sm">{cat.name}</span>
-                </div>
-                <span className="font-mono tabular-nums text-sm font-medium">{formatCurrency(cat.value)}</span>
-              </div>
-            ))}
-            {categoryData.length === 0 && (
-              <p className="text-sm text-muted-foreground">Nenhuma despesa registrada.</p>
-            )}
+        {categoryData.length === 0 ? (
+          <div className="text-center py-10 px-4 text-muted-foreground">
+            <p className="text-sm font-medium">Nenhuma despesa registrada até o momento</p>
+            <p className="text-xs mt-1">Ao lançar novas despesas, a distribuição gráfica aparecerá aqui.</p>
           </div>
-          {categoryData.length > 0 && (
-            <div className="h-48 flex items-center justify-center">
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+            <div className="space-y-3">
+              {categoryData.map((cat) => (
+                <div key={cat.name} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }} />
+                    <span className="text-sm">{cat.name}</span>
+                  </div>
+                  <span className="font-mono tabular-nums text-sm font-medium">
+                    {formatCurrency(cat.value)}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="h-56 flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={categoryData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" paddingAngle={2}>
+                  <Pie
+                    data={categoryData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={85}
+                    dataKey="value"
+                    paddingAngle={3}
+                  >
                     {categoryData.map((entry) => (
                       <Cell key={entry.name} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => formatCurrency(value)} contentStyle={{ borderRadius: "8px", fontSize: "13px" }} />
+                  <Tooltip
+                    formatter={(value: number) => formatCurrency(value)}
+                    contentStyle={{ borderRadius: "8px", fontSize: "13px" }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+

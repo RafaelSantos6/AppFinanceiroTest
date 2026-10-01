@@ -83,8 +83,8 @@ export default function Budgets() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-heading">Orçamentos</h1>
-          <p className="text-sm text-muted-foreground">
-            Março 2026 · {formatCurrency(totalSpent)} de {formatCurrency(totalBudget)} usado
+          <p className="text-sm text-muted-foreground capitalize">
+            {new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" })} · {formatCurrency(totalSpent)} de {formatCurrency(totalBudget)} usado
           </p>
         </div>
         <Button size="sm" onClick={() => { setShowForm(true); setEditingBudget(null); }}>

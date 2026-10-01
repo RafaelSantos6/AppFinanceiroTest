@@ -1,84 +1,231 @@
-import { useState, useEffect, useCallback } from "react";
-import {
-  Transaction,
-  Account,
-  Budget,
-  mockTransactions,
-  mockAccounts,
-  mockBudgets,
-} from "@/lib/mock-data";
-
-function loadFromStorage<T>(key: string, fallback: T): T {
-  try {
-    const stored = localStorage.getItem(key);
-    return stored ? JSON.parse(stored) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function saveToStorage<T>(key: string, data: T) {
-  localStorage.setItem(key, JSON.stringify(data));
-}
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Transaction, Account, Budget } from "@/lib/mock-data";
+import { api } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function useFinanceData() {
-  const [transactions, setTransactions] = useState<Transaction[]>(() =>
-    loadFromStorage("ledger_transactions", mockTransactions)
+  const { user, isAuthenticated } = useAuth();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const previousUserIdRef = useRef<string | null>(null);
+
+  // Chaves de armazenamento isoladas por ID de usuário
+  const getStorageKey = useCallback(
+    (entity: string) => (user ? `ledger_${entity}_${user.id}` : `ledger_${entity}_guest`),
+    [user]
   );
-  const [accounts, setAccounts] = useState<Account[]>(() =>
-    loadFromStorage("ledger_accounts", mockAccounts)
+
+  // Limpa chaves legadas e antigas do localStorage
+  useEffect(() => {
+    try {
+      localStorage.removeItem("ledger_transactions");
+      localStorage.removeItem("ledger_accounts");
+      localStorage.removeItem("ledger_budgets");
+    } catch {
+      // Ignora erro se localStorage inacessível
+    }
+  }, []);
+
+  // Carrega os dados reais do usuário a partir do backend SQLite
+  const loadUserData = useCallback(async () => {
+    if (!isAuthenticated || !user) {
+      setTransactions([]);
+      setAccounts([]);
+      setBudgets([]);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const [txs, accs, bdgs] = await Promise.all([
+        api.getTransactions().catch(() => null),
+        api.getAccounts().catch(() => null),
+        api.getBudgets().catch(() => null),
+      ]);
+
+      if (txs !== null) {
+        setTransactions(txs);
+        localStorage.setItem(getStorageKey("transactions"), JSON.stringify(txs));
+      } else {
+        const cached = localStorage.getItem(getStorageKey("transactions"));
+        setTransactions(cached ? JSON.parse(cached) : []);
+      }
+
+      if (accs !== null) {
+        setAccounts(accs);
+        localStorage.setItem(getStorageKey("accounts"), JSON.stringify(accs));
+      } else {
+        const cached = localStorage.getItem(getStorageKey("accounts"));
+        setAccounts(cached ? JSON.parse(cached) : []);
+      }
+
+      if (bdgs !== null) {
+        setBudgets(bdgs);
+        localStorage.setItem(getStorageKey("budgets"), JSON.stringify(bdgs));
+      } else {
+        const cached = localStorage.getItem(getStorageKey("budgets"));
+        setBudgets(cached ? JSON.parse(cached) : []);
+      }
+    } catch (error) {
+      console.error("Erro ao sincronizar finanças com backend:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isAuthenticated, user, getStorageKey]);
+
+  // Recarrega sempre que o usuário autenticado mudar
+  useEffect(() => {
+    const currentUserId = user?.id ?? null;
+    if (previousUserIdRef.current !== currentUserId) {
+      // Limpa dados em memória ao trocar de usuário
+      setTransactions([]);
+      setAccounts([]);
+      setBudgets([]);
+      previousUserIdRef.current = currentUserId;
+    }
+
+    if (isAuthenticated && user) {
+      loadUserData();
+    } else {
+      setTransactions([]);
+      setAccounts([]);
+      setBudgets([]);
+    }
+  }, [isAuthenticated, user, loadUserData]);
+
+  // Transações CRUD
+  const addTransaction = useCallback(
+    async (tx: Omit<Transaction, "id">) => {
+      const tempId = crypto.randomUUID();
+      const optimisticTx: Transaction = { ...tx, id: tempId };
+      setTransactions((prev) => [optimisticTx, ...prev]);
+
+      try {
+        const created = await api.createTransaction(tx);
+        setTransactions((prev) => prev.map((t) => (t.id === tempId ? created : t)));
+        // Recarrega contas para atualizar saldos sincronizados pelo backend
+        const updatedAccounts = await api.getAccounts().catch(() => null);
+        if (updatedAccounts) setAccounts(updatedAccounts);
+      } catch (err) {
+        console.error("Falha ao salvar transação na API:", err);
+      }
+    },
+    []
   );
-  const [budgets, setBudgets] = useState<Budget[]>(() =>
-    loadFromStorage("ledger_budgets", mockBudgets)
+
+  const updateTransaction = useCallback(
+    async (id: string, data: Partial<Transaction>) => {
+      setTransactions((prev) => prev.map((t) => (t.id === id ? { ...t, ...data } : t)));
+      try {
+        await api.updateTransaction(id, data);
+        const updatedAccounts = await api.getAccounts().catch(() => null);
+        if (updatedAccounts) setAccounts(updatedAccounts);
+      } catch (err) {
+        console.error("Falha ao atualizar transação na API:", err);
+      }
+    },
+    []
   );
 
-  useEffect(() => saveToStorage("ledger_transactions", transactions), [transactions]);
-  useEffect(() => saveToStorage("ledger_accounts", accounts), [accounts]);
-  useEffect(() => saveToStorage("ledger_budgets", budgets), [budgets]);
+  const deleteTransaction = useCallback(
+    async (id: string) => {
+      setTransactions((prev) => prev.filter((t) => t.id !== id));
+      try {
+        await api.deleteTransaction(id);
+        const updatedAccounts = await api.getAccounts().catch(() => null);
+        if (updatedAccounts) setAccounts(updatedAccounts);
+      } catch (err) {
+        console.error("Falha ao deletar transação na API:", err);
+      }
+    },
+    []
+  );
 
-  // Transactions CRUD
-  const addTransaction = useCallback((tx: Omit<Transaction, "id">) => {
-    const newTx: Transaction = { ...tx, id: crypto.randomUUID() };
-    setTransactions((prev) => [newTx, ...prev]);
-  }, []);
+  // Contas CRUD
+  const addAccount = useCallback(
+    async (acc: Omit<Account, "id">) => {
+      const tempId = crypto.randomUUID();
+      const optimisticAcc: Account = { ...acc, id: tempId };
+      setAccounts((prev) => [...prev, optimisticAcc]);
 
-  const updateTransaction = useCallback((id: string, data: Partial<Transaction>) => {
-    setTransactions((prev) => prev.map((t) => (t.id === id ? { ...t, ...data } : t)));
-  }, []);
+      try {
+        const created = await api.createAccount(acc);
+        setAccounts((prev) => prev.map((a) => (a.id === tempId ? created : a)));
+      } catch (err) {
+        console.error("Falha ao salvar conta na API:", err);
+      }
+    },
+    []
+  );
 
-  const deleteTransaction = useCallback((id: string) => {
-    setTransactions((prev) => prev.filter((t) => t.id !== id));
-  }, []);
+  const updateAccount = useCallback(
+    async (id: string, data: Partial<Account>) => {
+      setAccounts((prev) => prev.map((a) => (a.id === id ? { ...a, ...data } : a)));
+      try {
+        await api.updateAccount(id, data);
+      } catch (err) {
+        console.error("Falha ao atualizar conta na API:", err);
+      }
+    },
+    []
+  );
 
-  // Accounts CRUD
-  const addAccount = useCallback((acc: Omit<Account, "id">) => {
-    const newAcc: Account = { ...acc, id: crypto.randomUUID() };
-    setAccounts((prev) => [...prev, newAcc]);
-  }, []);
+  const deleteAccount = useCallback(
+    async (id: string) => {
+      setAccounts((prev) => prev.filter((a) => a.id !== id));
+      try {
+        await api.deleteAccount(id);
+      } catch (err) {
+        console.error("Falha ao remover conta na API:", err);
+      }
+    },
+    []
+  );
 
-  const updateAccount = useCallback((id: string, data: Partial<Account>) => {
-    setAccounts((prev) => prev.map((a) => (a.id === id ? { ...a, ...data } : a)));
-  }, []);
+  // Orçamentos CRUD
+  const addBudget = useCallback(
+    async (budget: Omit<Budget, "id">) => {
+      const tempId = crypto.randomUUID();
+      const optimisticBudget: Budget = { ...budget, id: tempId, spent: 0 };
+      setBudgets((prev) => [...prev, optimisticBudget]);
 
-  const deleteAccount = useCallback((id: string) => {
-    setAccounts((prev) => prev.filter((a) => a.id !== id));
-  }, []);
+      try {
+        const created = await api.createBudget(budget);
+        setBudgets((prev) => prev.map((b) => (b.id === tempId ? created : b)));
+      } catch (err) {
+        console.error("Falha ao criar orçamento na API:", err);
+      }
+    },
+    []
+  );
 
-  // Budgets CRUD
-  const addBudget = useCallback((budget: Omit<Budget, "id">) => {
-    const newBudget: Budget = { ...budget, id: crypto.randomUUID() };
-    setBudgets((prev) => [...prev, newBudget]);
-  }, []);
+  const updateBudget = useCallback(
+    async (id: string, data: Partial<Budget>) => {
+      setBudgets((prev) => prev.map((b) => (b.id === id ? { ...b, ...data } : b)));
+      try {
+        await api.updateBudget(id, data);
+      } catch (err) {
+        console.error("Falha ao atualizar orçamento na API:", err);
+      }
+    },
+    []
+  );
 
-  const updateBudget = useCallback((id: string, data: Partial<Budget>) => {
-    setBudgets((prev) => prev.map((b) => (b.id === id ? { ...b, ...data } : b)));
-  }, []);
+  const deleteBudget = useCallback(
+    async (id: string) => {
+      setBudgets((prev) => prev.filter((b) => b.id !== id));
+      try {
+        await api.deleteBudget(id);
+      } catch (err) {
+        console.error("Falha ao excluir orçamento na API:", err);
+      }
+    },
+    []
+  );
 
-  const deleteBudget = useCallback((id: string) => {
-    setBudgets((prev) => prev.filter((b) => b.id !== id));
-  }, []);
-
-  // Computed values
+  // Totais calculados estritamente sobre as transações reais do usuário
   const totalIncome = transactions
     .filter((t) => t.type === "income")
     .reduce((sum, t) => sum + t.amount, 0);
@@ -89,7 +236,7 @@ export function useFinanceData() {
 
   const balance = totalIncome - totalExpenses;
 
-  // Recalculate budget spent from transactions
+  // Recalcula o gasto de cada orçamento com base nas transações reais
   const budgetsWithSpent = budgets.map((b) => {
     const spent = transactions
       .filter((t) => t.type === "expense" && t.category === b.category)
@@ -104,6 +251,8 @@ export function useFinanceData() {
     totalIncome,
     totalExpenses,
     balance,
+    isLoading,
+    refetchFinanceData: loadUserData,
     addTransaction,
     updateTransaction,
     deleteTransaction,
@@ -115,3 +264,4 @@ export function useFinanceData() {
     deleteBudget,
   };
 }
+

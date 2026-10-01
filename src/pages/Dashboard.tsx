@@ -8,7 +8,7 @@ import {
 import { StatCard } from "@/components/StatCard";
 import { useFinance } from "@/contexts/FinanceContext";
 import {
-  monthlyTrendData,
+  calculateMonthlyTrend,
   formatCurrency,
   defaultCategories,
 } from "@/lib/mock-data";
@@ -25,6 +25,7 @@ import {
 
 export default function Dashboard() {
   const { transactions, budgets, totalIncome, totalExpenses, balance } = useFinance();
+  const dynamicTrend = calculateMonthlyTrend(transactions);
 
   const categorySpending = budgets.map((b) => {
     const cat = defaultCategories.find((c) => c.name === b.category);
@@ -35,11 +36,13 @@ export default function Dashboard() {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 6);
 
+  const currentMonthYear = new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-heading">Painel</h1>
-        <p className="text-sm text-muted-foreground">Resumo de março 2026</p>
+        <p className="text-sm text-muted-foreground capitalize">Resumo de {currentMonthYear}</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -47,21 +50,18 @@ export default function Dashboard() {
           label="Saldo Total"
           value={balance}
           icon={Wallet}
-          trend={{ value: 12.5, positive: true }}
         />
         <StatCard
           label="Total de Receitas"
           value={totalIncome}
           icon={TrendingUp}
           variant="success"
-          trend={{ value: 8.2, positive: true }}
         />
         <StatCard
           label="Total de Despesas"
           value={totalExpenses}
           icon={TrendingDown}
           variant="destructive"
-          trend={{ value: 3.1, positive: false }}
         />
         <StatCard
           label="Taxa de Economia"
@@ -76,10 +76,10 @@ export default function Dashboard() {
           <h2 className="text-heading mb-4">Tendência Mensal</h2>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyTrendData} barGap={4}>
+              <BarChart data={dynamicTrend} barGap={4}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(214,32%,91%)" vertical={false} />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "hsl(215,16%,47%)" }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "hsl(215,16%,47%)" }} tickFormatter={(v) => `R$${v / 1000}k`} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "hsl(215,16%,47%)" }} tickFormatter={(v) => `R$${v >= 1000 ? (v / 1000).toFixed(0) + "k" : v}`} />
                 <Tooltip formatter={(value: number) => formatCurrency(value)} contentStyle={{ background: "hsl(0,0%,100%)", border: "1px solid hsl(214,32%,91%)", borderRadius: "8px", fontSize: "13px" }} />
                 <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "12px" }} />
                 <Bar dataKey="income" name="Receitas" fill="hsl(142,71%,45%)" radius={[4, 4, 0, 0]} />
@@ -91,33 +91,37 @@ export default function Dashboard() {
 
         <div className="bg-card rounded-xl shadow-card p-5">
           <h2 className="text-heading mb-4">Gastos por Categoria</h2>
-          <div className="space-y-3">
-            {categorySpending.map((cat) => {
-              const pct = cat.limit > 0 ? Math.min((cat.spent / cat.limit) * 100, 100) : 0;
-              return (
-                <div key={cat.name}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium truncate">{cat.name}</span>
-                    <span className="text-xs text-muted-foreground font-mono tabular-nums">
-                      {formatCurrency(cat.spent)} / {formatCurrency(cat.limit)}
-                    </span>
+          {categorySpending.length > 0 ? (
+            <div className="space-y-3">
+              {categorySpending.map((cat) => {
+                const pct = cat.limit > 0 ? Math.min((cat.spent / cat.limit) * 100, 100) : 0;
+                return (
+                  <div key={cat.name}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium truncate">{cat.name}</span>
+                      <span className="text-xs text-muted-foreground font-mono tabular-nums">
+                        {formatCurrency(cat.spent)} / {formatCurrency(cat.limit)}
+                      </span>
+                    </div>
+                    <div className="h-2 bg-accent rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        whileInView={{ width: `${pct}%` }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5, ease: [0.2, 0, 0, 1] }}
+                        className="h-full rounded-full"
+                        style={{
+                          backgroundColor: pct > 90 ? "hsl(0,84%,60%)" : pct > 70 ? "hsl(38,92%,50%)" : cat.color,
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2 bg-accent rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      whileInView={{ width: `${pct}%` }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.5, ease: [0.2, 0, 0, 1] }}
-                      className="h-full rounded-full"
-                      style={{
-                        backgroundColor: pct > 90 ? "hsl(0,84%,60%)" : pct > 70 ? "hsl(38,92%,50%)" : cat.color,
-                      }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          ) : (
+             <p className="text-sm text-muted-foreground text-center py-8">Nenhum orçamento definido ainda.</p>
+          )}
         </div>
       </div>
 
