@@ -1,6 +1,6 @@
 import { Account, Budget, Transaction } from "./mock-data";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://appfinanceiro-api.onrender.com/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3333/api";
 
 function getAuthHeader(): Record<string, string> {
   const token = localStorage.getItem("ledger_auth_token");
