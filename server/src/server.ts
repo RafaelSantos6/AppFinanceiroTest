@@ -11,16 +11,21 @@ import categoriesRoutes from "./routes/categories.routes";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3333;
+const PORT = Number(process.env.PORT) || 3000;
 
 app.use(cors());
 app.use(express.json());
+
+// Rota raiz (Health Check para o Render)
+app.get("/", (req, res) => {
+  res.status(200).send("API online");
+});
 
 // Rota de verificação do status da API
 app.get("/api/health", (_req, res) => {
   res.json({
     status: "ok",
-    message: "Backend Ledger Finance API online com banco de dados SQLite",
+    message: "Backend Ledger Finance API online",
     timestamp: new Date().toISOString(),
   });
 });
@@ -32,8 +37,8 @@ app.use("/api/accounts", accountsRoutes);
 app.use("/api/budgets", budgetsRoutes);
 app.use("/api/categories", categoriesRoutes);
 
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor backend rodando com sucesso em http://localhost:${PORT}`);
-  console.log(`📊 Banco de dados SQLite conectado.`);
-  console.log(`🔐 Rotas de autenticação disponíveis em http://localhost:${PORT}/api/auth`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Servidor backend rodando com sucesso na porta ${PORT}`);
+  console.log(`📊 Banco de dados PostgreSQL conectado.`);
+  console.log(`🔐 Rotas de autenticação disponíveis em /api/auth`);
 });

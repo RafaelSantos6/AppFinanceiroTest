@@ -80,7 +80,7 @@ async function main() {
   });
 
   console.log(`✅ Usuário inicial criado com sucesso: ${user.email} (senha: admin123)`);
-  console.log("Banco de dados SQLite populado com dados de exemplo!");
+  console.log("Banco de dados populado com dados de exemplo!");
 }
 
 main()
