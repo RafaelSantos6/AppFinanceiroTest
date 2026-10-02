@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("Iniciando seed do banco de dados SQLite...");
+  console.log("Iniciando seed do banco de dados...");
 
   const adminEmail = "admin@ledger.com";
   const hashedPassword = await bcrypt.hash("admin123", 10);
