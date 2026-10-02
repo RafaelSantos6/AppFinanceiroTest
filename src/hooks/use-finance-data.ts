@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Transaction, Account, Budget } from "@/lib/mock-data";
+import { Transaction, Account, Budget, Category, defaultCategories } from "@/lib/mock-data";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -8,6 +8,7 @@ export function useFinanceData() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [categories, setCategories] = useState<Category[]>(defaultCategories);
   const [isLoading, setIsLoading] = useState(false);
   const previousUserIdRef = useRef<string | null>(null);
 
@@ -23,6 +24,7 @@ export function useFinanceData() {
       localStorage.removeItem("ledger_transactions");
       localStorage.removeItem("ledger_accounts");
       localStorage.removeItem("ledger_budgets");
+      localStorage.removeItem("ledger_categories");
     } catch {
       // Ignora erro se localStorage inacessível
     }
@@ -34,15 +36,17 @@ export function useFinanceData() {
       setTransactions([]);
       setAccounts([]);
       setBudgets([]);
+      setCategories(defaultCategories);
       return;
     }
 
     setIsLoading(true);
     try {
-      const [txs, accs, bdgs] = await Promise.all([
+      const [txs, accs, bdgs, cats] = await Promise.all([
         api.getTransactions().catch(() => null),
         api.getAccounts().catch(() => null),
         api.getBudgets().catch(() => null),
+        api.getCategories().catch(() => null),
       ]);
 
       if (txs !== null) {
@@ -68,6 +72,13 @@ export function useFinanceData() {
         const cached = localStorage.getItem(getStorageKey("budgets"));
         setBudgets(cached ? JSON.parse(cached) : []);
       }
+      if (cats !== null) {
+        setCategories([...defaultCategories, ...cats]);
+        localStorage.setItem(getStorageKey("categories"), JSON.stringify(cats));
+      } else {
+        const cached = localStorage.getItem(getStorageKey("categories"));
+        setCategories(cached ? [...defaultCategories, ...JSON.parse(cached)] : defaultCategories);
+      }
     } catch (error) {
       console.error("Erro ao sincronizar finanças com backend:", error);
     } finally {
@@ -83,6 +94,7 @@ export function useFinanceData() {
       setTransactions([]);
       setAccounts([]);
       setBudgets([]);
+      setCategories(defaultCategories);
       previousUserIdRef.current = currentUserId;
     }
 
@@ -92,6 +104,7 @@ export function useFinanceData() {
       setTransactions([]);
       setAccounts([]);
       setBudgets([]);
+      setCategories(defaultCategories);
     }
   }, [isAuthenticated, user, loadUserData]);
 
@@ -225,6 +238,35 @@ export function useFinanceData() {
     []
   );
 
+  // Categorias CRUD
+  const addCategory = useCallback(
+    async (cat: Omit<Category, "id">) => {
+      const tempId = crypto.randomUUID();
+      const optimisticCat: Category = { ...cat, id: tempId };
+      setCategories((prev) => [...prev, optimisticCat]);
+
+      try {
+        const created = await api.createCategory(cat);
+        setCategories((prev) => prev.map((c) => (c.id === tempId ? created : c)));
+      } catch (err) {
+        console.error("Falha ao criar categoria na API:", err);
+      }
+    },
+    []
+  );
+
+  const deleteCategory = useCallback(
+    async (id: string) => {
+      setCategories((prev) => prev.filter((c) => c.id !== id));
+      try {
+        await api.deleteCategory(id);
+      } catch (err) {
+        console.error("Falha ao excluir categoria na API:", err);
+      }
+    },
+    []
+  );
+
   // Totais calculados estritamente sobre as transações reais do usuário
   const totalIncome = transactions
     .filter((t) => t.type === "income")
@@ -248,6 +290,7 @@ export function useFinanceData() {
     transactions,
     accounts,
     budgets: budgetsWithSpent,
+    categories,
     totalIncome,
     totalExpenses,
     balance,
@@ -262,6 +305,8 @@ export function useFinanceData() {
     addBudget,
     updateBudget,
     deleteBudget,
+    addCategory,
+    deleteCategory,
   };
 }
 

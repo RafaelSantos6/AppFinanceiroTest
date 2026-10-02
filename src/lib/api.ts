@@ -1,6 +1,7 @@
-import { Account, Budget, Transaction } from "./mock-data";
+import { Account, Budget, Transaction, Category } from "./mock-data";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3333/api";
+const rawApiUrl = import.meta.env.VITE_API_URL || "http://localhost:3333";
+const API_BASE_URL = rawApiUrl.endsWith("/api") ? rawApiUrl : `${rawApiUrl}/api`;
 
 function getAuthHeader(): Record<string, string> {
   const token = localStorage.getItem("ledger_auth_token");
@@ -152,5 +153,32 @@ export const api = {
       headers: { ...getAuthHeader() },
     });
     if (!res.ok) throw new Error("Erro ao remover orçamento");
+  },
+
+  // Categories
+  async getCategories(): Promise<Category[]> {
+    const res = await fetch(`${API_BASE_URL}/categories`, {
+      headers: { ...getAuthHeader() },
+    });
+    if (!res.ok) throw new Error("Erro ao carregar categorias");
+    return res.json();
+  },
+
+  async createCategory(c: Omit<Category, "id">): Promise<Category> {
+    const res = await fetch(`${API_BASE_URL}/categories`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...getAuthHeader() },
+      body: JSON.stringify(c),
+    });
+    if (!res.ok) throw new Error("Erro ao salvar categoria");
+    return res.json();
+  },
+
+  async deleteCategory(id: string): Promise<void> {
+    const res = await fetch(`${API_BASE_URL}/categories/${id}`, {
+      method: "DELETE",
+      headers: { ...getAuthHeader() },
+    });
+    if (!res.ok) throw new Error("Erro ao remover categoria");
   },
 };

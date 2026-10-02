@@ -19,11 +19,13 @@ import {
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function Reports() {
   const { transactions, totalIncome, totalExpenses } = useFinance();
 
   const dynamicTrend = calculateMonthlyTrend(transactions);
+  const { toast } = useToast();
 
   // Calcula gastos reais por categoria diretamente das transações
   const categoryExpensesMap = new Map<string, number>();
@@ -44,24 +46,44 @@ export default function Reports() {
   });
 
   function downloadCSV() {
-    const headers = ["Data", "Tipo", "Categoria", "Descrição", "Valor", "Conta", "Forma de Pagamento"];
-    const rows = transactions.map((t) => [
-      t.date,
-      t.type === "income" ? "Receita" : "Despesa",
-      t.category,
-      t.description,
-      t.amount.toFixed(2),
-      t.account,
-      t.paymentMethod,
-    ]);
-    const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
+    const headers = ["Data", "Descrição", "Categoria", "Conta", "Tipo (Receita/Despesa)", "Valor (R$)"];
+    const rows = transactions.map((t) => {
+      // Formatar a data (YYYY-MM-DD -> DD/MM/AAAA)
+      const dateParts = t.date.split("-");
+      const formattedDate = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : t.date;
+      
+      // Formatar o valor (Substitui ponto por vírgula para manter padrão local no excel)
+      const formattedValue = t.amount.toFixed(2).replace(".", ",");
+      
+      return [
+        formattedDate,
+        `"${t.description.replace(/"/g, '""')}"`,
+        `"${t.category}"`,
+        `"${t.account}"`,
+        t.type === "income" ? "Receita" : "Despesa",
+        formattedValue,
+      ];
+    });
+    
+    // Adicionar BOM (\uFEFF) para garantir leitura UTF-8 no Excel
+    const csv = "\uFEFF" + [headers, ...rows].map((r) => r.join(";")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `relatorio-transacoes-${new Date().toISOString().slice(0, 10)}.csv`;
+    
+    const now = new Date();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const yyyy = now.getFullYear();
+    a.download = `relatorio-financeiro-${yyyy}-${mm}.csv`;
+    
     a.click();
     URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Exportação concluída",
+      description: "O relatório CSV foi gerado e baixado com sucesso.",
+    });
   }
 
   const currentMonthYear = new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
