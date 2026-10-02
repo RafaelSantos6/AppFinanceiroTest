@@ -2,7 +2,7 @@
   "name": "ledger-finance-backend",
   "version": "1.0.0",
   "private": true,
-  "description": "Backend API para Sistema de Gestão Financeira com PostgreSQL e Prisma",
+  "description": "Backend API para Sistema de Gestão Financeira com SQLite e Prisma",
   "main": "src/server.ts",
   "type": "commonjs",
   "scripts": {
