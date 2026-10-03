@@ -27,7 +27,8 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 const STORAGE_KEY_TOKEN = "ledger_auth_token";
 const STORAGE_KEY_USER = "ledger_auth_user";
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3333/api";
+const rawUrl = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:3333" : "https://appfinanceiro-api.onrender.com");
+const API_URL = rawUrl.endsWith("/api") ? rawUrl : `${rawUrl}/api`;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
