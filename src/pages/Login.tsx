@@ -16,6 +16,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import {
   Lock,
+  Loader2,
+  Info,
   Mail,
   User as UserIcon,
   TrendingUp,
@@ -25,6 +27,7 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Login() {
   const { login, register, loginDemo, isAuthenticated } = useAuth();
