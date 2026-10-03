@@ -19,12 +19,13 @@ import {
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
+import { MonthYearSelector } from "@/components/MonthYearSelector";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function Reports() {
-  const { transactions, totalIncome, totalExpenses } = useFinance();
+  const { transactions, allTransactions, totalIncome, totalExpenses } = useFinance();
 
-  const dynamicTrend = calculateMonthlyTrend(transactions);
+  const dynamicTrend = calculateMonthlyTrend(allTransactions);
   const { toast } = useToast();
 
   // Calcula gastos reais por categoria diretamente das transações
@@ -94,9 +95,10 @@ export default function Reports() {
         <div>
           <h1 className="text-heading">Relatórios e Análise</h1>
           <p className="text-sm text-muted-foreground capitalize">
-            Visão consolidada · {currentMonthYear}
+            Visão consolidada
           </p>
         </div>
+        <MonthYearSelector />
         <Button
           variant="outline"
           size="sm"

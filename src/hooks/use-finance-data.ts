@@ -9,6 +9,7 @@ export function useFinanceData() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [categories, setCategories] = useState<Category[]>(defaultCategories);
+  const [selectedMonth, setSelectedMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [isLoading, setIsLoading] = useState(false);
   const previousUserIdRef = useRef<string | null>(null);
 
@@ -267,27 +268,33 @@ export function useFinanceData() {
     []
   );
 
-  // Totais calculados estritamente sobre as transações reais do usuário
-  const totalIncome = transactions
+  // Filtro por mês
+  const filteredTransactions = transactions.filter((t) => t.date.startsWith(selectedMonth));
+
+  // Totais calculados estritamente sobre as transações reais do usuário (no mês)
+  const totalIncome = filteredTransactions
     .filter((t) => t.type === "income")
     .reduce((sum, t) => sum + t.amount, 0);
 
-  const totalExpenses = transactions
+  const totalExpenses = filteredTransactions
     .filter((t) => t.type === "expense")
     .reduce((sum, t) => sum + t.amount, 0);
 
   const balance = totalIncome - totalExpenses;
 
-  // Recalcula o gasto de cada orçamento com base nas transações reais
+  // Recalcula o gasto de cada orçamento com base nas transações reais do mês
   const budgetsWithSpent = budgets.map((b) => {
-    const spent = transactions
+    const spent = filteredTransactions
       .filter((t) => t.type === "expense" && t.category === b.category)
       .reduce((sum, t) => sum + t.amount, 0);
     return { ...b, spent };
   });
 
   return {
-    transactions,
+    transactions: filteredTransactions,
+    allTransactions: transactions,
+    selectedMonth,
+    setSelectedMonth,
     accounts,
     budgets: budgetsWithSpent,
     categories,

@@ -50,6 +50,7 @@ export default function Login() {
   const [registerPassword, setRegisterPassword] = useState("");
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState("");
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [isSlowRequest, setIsSlowRequest] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -219,6 +220,7 @@ export default function Login() {
                           className="pl-9"
                           value={loginEmail}
                           onChange={(e) => setLoginEmail(e.target.value)}
+                          disabled={isLoading}
                           required
                           autoComplete="email"
                         />
@@ -248,6 +250,7 @@ export default function Login() {
                           className="pl-9 pr-9"
                           value={loginPassword}
                           onChange={(e) => setLoginPassword(e.target.value)}
+                          disabled={isLoading}
                           required
                           autoComplete="current-password"
                         />
@@ -271,13 +274,21 @@ export default function Login() {
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading ? (
                         <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <Loader2 className="w-4 h-4 animate-spin" />
                           <span>Autenticando...</span>
                         </div>
                       ) : (
                         "Acessar Painel"
                       )}
                     </Button>
+                    {isSlowRequest && (
+                      <Alert className="mt-4 border-primary/20 bg-primary/5">
+                        <Info className="h-4 w-4 text-primary" />
+                        <AlertDescription className="text-xs text-muted-foreground ml-2">
+                          Conectando ao servidor seguro na nuvem. Como o servidor estava em repouso, isso pode levar até 30 segundos...
+                        </AlertDescription>
+                      </Alert>
+                    )}
                   </CardFooter>
                 </form>
               </TabsContent>
@@ -297,6 +308,7 @@ export default function Login() {
                           className="pl-9"
                           value={registerName}
                           onChange={(e) => setRegisterName(e.target.value)}
+                          disabled={isLoading}
                           required
                         />
                       </div>
@@ -313,6 +325,7 @@ export default function Login() {
                           className="pl-9"
                           value={registerEmail}
                           onChange={(e) => setRegisterEmail(e.target.value)}
+                          disabled={isLoading}
                           required
                         />
                       </div>
@@ -329,6 +342,7 @@ export default function Login() {
                           className="pl-9 pr-9"
                           value={registerPassword}
                           onChange={(e) => setRegisterPassword(e.target.value)}
+                          disabled={isLoading}
                           required
                           minLength={6}
                         />
@@ -358,6 +372,7 @@ export default function Login() {
                           className="pl-9"
                           value={registerConfirmPassword}
                           onChange={(e) => setRegisterConfirmPassword(e.target.value)}
+                          disabled={isLoading}
                           required
                           minLength={6}
                         />
@@ -369,13 +384,21 @@ export default function Login() {
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading ? (
                         <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <Loader2 className="w-4 h-4 animate-spin" />
                           <span>Criando conta...</span>
                         </div>
                       ) : (
                         "Cadastrar e Começar"
                       )}
                     </Button>
+                    {isSlowRequest && (
+                      <Alert className="mt-4 border-primary/20 bg-primary/5">
+                        <Info className="h-4 w-4 text-primary" />
+                        <AlertDescription className="text-xs text-muted-foreground ml-2">
+                          Conectando ao servidor seguro na nuvem. Como o servidor estava em repouso, isso pode levar até 30 segundos...
+                        </AlertDescription>
+                      </Alert>
+                    )}
                   </CardFooter>
                 </form>
               </TabsContent>

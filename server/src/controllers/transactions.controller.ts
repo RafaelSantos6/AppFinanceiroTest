@@ -36,27 +36,29 @@ export async function createTransaction(req: AuthenticatedRequest, res: Response
       return;
     }
 
-    const transaction = await prisma.transaction.create({
-      data: {
-        ...parsed.data,
-        userId,
-      },
-    });
+    const data = parsed.data;
 
-    // Atualiza saldo da conta associada se existir
-    const matchingAccount = await prisma.account.findFirst({
-      where: { userId, name: parsed.data.account },
-    });
-
-    if (matchingAccount) {
-      const balanceDelta = parsed.data.type === "income" ? parsed.data.amount : -parsed.data.amount;
-      await prisma.account.update({
-        where: { id: matchingAccount.id },
-        data: { balance: matchingAccount.balance + balanceDelta },
+    const result = await prisma.$transaction(async (tx) => {
+      const transaction = await tx.transaction.create({
+        data: { ...data, userId },
       });
-    }
 
-    res.status(201).json(transaction);
+      const matchingAccount = await tx.account.findFirst({
+        where: { userId, name: data.account },
+      });
+
+      if (matchingAccount) {
+        const balanceDelta = data.type === "income" ? data.amount : -data.amount;
+        await tx.account.update({
+          where: { id: matchingAccount.id },
+          data: { balance: matchingAccount.balance + balanceDelta },
+        });
+      }
+
+      return transaction;
+    });
+
+    res.status(201).json(result);
   } catch (error) {
     console.error("Erro ao criar transação:", error);
     res.status(500).json({ message: "Erro ao criar transação." });
@@ -77,12 +79,48 @@ export async function updateTransaction(req: AuthenticatedRequest, res: Response
       return;
     }
 
-    const updated = await prisma.transaction.update({
-      where: { id },
-      data: req.body,
+    const parsed = transactionSchema.partial().safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: "Dados inválidos." });
+      return;
+    }
+    const data = parsed.data;
+
+    const result = await prisma.$transaction(async (tx) => {
+      // Reverter saldo da conta antiga
+      const oldAccount = await tx.account.findFirst({
+        where: { userId, name: existing.account },
+      });
+      if (oldAccount) {
+        const revertDelta = existing.type === "income" ? -existing.amount : existing.amount;
+        await tx.account.update({
+          where: { id: oldAccount.id },
+          data: { balance: oldAccount.balance + revertDelta },
+        });
+      }
+
+      // Atualizar transação
+      const updatedTx = await tx.transaction.update({
+        where: { id },
+        data,
+      });
+
+      // Aplicar novo saldo na conta (pode ser a mesma ou uma nova)
+      const newAccount = await tx.account.findFirst({
+        where: { userId, name: updatedTx.account },
+      });
+      if (newAccount) {
+        const applyDelta = updatedTx.type === "income" ? updatedTx.amount : -updatedTx.amount;
+        await tx.account.update({
+          where: { id: newAccount.id },
+          data: { balance: newAccount.balance + applyDelta },
+        });
+      }
+
+      return updatedTx;
     });
 
-    res.json(updated);
+    res.json(result);
   } catch (error) {
     console.error("Erro ao atualizar transação:", error);
     res.status(500).json({ message: "Erro ao atualizar transação." });
@@ -103,8 +141,22 @@ export async function deleteTransaction(req: AuthenticatedRequest, res: Response
       return;
     }
 
-    await prisma.transaction.delete({
-      where: { id },
+    await prisma.$transaction(async (tx) => {
+      // Reverter saldo da conta
+      const account = await tx.account.findFirst({
+        where: { userId, name: existing.account },
+      });
+      if (account) {
+        const revertDelta = existing.type === "income" ? -existing.amount : existing.amount;
+        await tx.account.update({
+          where: { id: account.id },
+          data: { balance: account.balance + revertDelta },
+        });
+      }
+
+      await tx.transaction.delete({
+        where: { id },
+      });
     });
 
     res.json({ message: "Transação removida com sucesso." });
