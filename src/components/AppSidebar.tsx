@@ -28,8 +28,11 @@ export function AppSidebar() {
   return (
     <aside className="hidden md:flex w-60 flex-col border-r border-border bg-card h-screen fixed left-0 top-0 z-30">
       <div className="p-6 border-b border-border">
-        <h1 className="text-heading font-semibold tracking-tight">
-          <span className="text-primary">Ledger</span>OS
+        <h1 className="text-heading font-semibold tracking-tight flex items-center gap-2">
+          <div className="bg-primary text-primary-foreground p-1.5 rounded-lg">
+            <Wallet className="w-5 h-5" />
+          </div>
+          <div>Bolso<span className="text-primary">Certo</span></div>
         </h1>
       </div>
 

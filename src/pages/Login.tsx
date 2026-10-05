@@ -20,6 +20,7 @@ import {
   Info,
   Mail,
   User as UserIcon,
+  Wallet,
   TrendingUp,
   ShieldCheck,
   Sparkles,
@@ -122,9 +123,9 @@ export default function Login() {
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-11 h-11 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-white" />
+              <Wallet className="w-6 h-6 text-white" />
             </div>
-            <span className="text-2xl font-bold tracking-tight text-white">LedgerOS</span>
+            <span className="text-2xl font-bold tracking-tight text-white">BolsoCerto</span>
           </div>
           <h2 className="text-3xl font-extrabold tracking-tight mt-10 leading-snug">
             Domine suas finanças pessoais e alcance sua liberdade financeira.
@@ -158,7 +159,7 @@ export default function Login() {
         </div>
 
         <div className="text-xs text-white/60 relative z-10">
-          © {new Date().getFullYear()} LedgerOS Financial Management. Todos os direitos reservados.
+          © {new Date().getFullYear()} BolsoCerto. Todos os direitos reservados.
         </div>
       </div>
 
@@ -168,9 +169,9 @@ export default function Login() {
           <div className="text-center lg:text-left space-y-2">
             <div className="inline-flex lg:hidden items-center gap-2 mb-2">
               <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                <TrendingUp className="w-5 h-5" />
+                <Wallet className="w-5 h-5" />
               </div>
-              <span className="text-xl font-bold tracking-tight">LedgerOS</span>
+              <span className="text-xl font-bold tracking-tight">BolsoCerto</span>
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
               Acesse sua conta

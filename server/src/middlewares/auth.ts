@@ -5,7 +5,7 @@ export interface AuthenticatedRequest extends Request {
   userId?: string;
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || "finance_system_super_secret_jwt_key_2026_ledger";
+const JWT_SECRET = process.env.JWT_SECRET || "finance_system_super_secret_jwt_key_2026_bolsocerto";
 
 export function authMiddleware(
   req: AuthenticatedRequest,

@@ -23,7 +23,7 @@ async function main() {
   }
   console.log("Limpeza de duplicadas concluída.");
 
-  const adminEmail = "admin@ledger.com";
+  const adminEmail = "admin@bolsocerto.com.br";
   const hashedPassword = await bcrypt.hash("admin123", 10);
 
   // Limpa registros anteriores do admin se existirem

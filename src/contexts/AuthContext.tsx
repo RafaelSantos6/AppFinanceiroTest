@@ -160,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     saveAuthSession({
       user: demoUser,
-      token: "demo-jwt-token-ledger-os",
+      token: "demo-jwt-token-bolsocerto",
     });
   };
 

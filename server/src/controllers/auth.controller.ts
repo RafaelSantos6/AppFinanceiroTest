@@ -5,7 +5,7 @@ import { z } from "zod";
 import { prisma } from "../prisma";
 import { AuthenticatedRequest } from "../middlewares/auth";
 
-const JWT_SECRET = process.env.JWT_SECRET || "finance_system_super_secret_jwt_key_2026_ledger";
+const JWT_SECRET = process.env.JWT_SECRET || "finance_system_super_secret_jwt_key_2026_bolsocerto";
 
 const registerSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),

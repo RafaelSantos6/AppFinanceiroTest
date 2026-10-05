@@ -20,7 +20,7 @@ app.use(express.json());
 app.get("/api/health", (_req, res) => {
   res.json({
     status: "ok",
-    message: "Backend Ledger Finance API online com banco de dados SQLite",
+    message: "Backend BolsoCerto API online com banco de dados SQLite",
     timestamp: new Date().toISOString(),
   });
 });
