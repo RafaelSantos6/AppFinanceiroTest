@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { defaultCategories, paymentMethods } from "@/lib/mock-data";
+import { paymentMethods } from "@/lib/mock-data";
 import { useFinance } from "@/contexts/FinanceContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,7 @@ interface TransactionFormProps {
 }
 
 export function TransactionForm({ onSubmit, initial }: TransactionFormProps) {
-  const { accounts, addTransaction, updateTransaction } = useFinance();
+  const { accounts, categories, addTransaction, updateTransaction } = useFinance();
   const [type, setType] = useState<"income" | "expense">(initial?.type ?? "expense");
   const [amount, setAmount] = useState(initial?.amount?.toString() ?? "");
   const [category, setCategory] = useState(initial?.category ?? "");
@@ -28,7 +28,7 @@ export function TransactionForm({ onSubmit, initial }: TransactionFormProps) {
   const [paymentMethod, setPaymentMethod] = useState(initial?.paymentMethod ?? "");
   const [account, setAccount] = useState(initial?.account ?? "");
 
-  const categories = defaultCategories.filter(
+  const filteredCategories = categories.filter(
     (c) => c.type === type || c.type === "both"
   );
 
@@ -101,7 +101,7 @@ export function TransactionForm({ onSubmit, initial }: TransactionFormProps) {
           <Select value={category} onValueChange={setCategory} required>
             <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
             <SelectContent>
-              {categories.map((c) => (
+              {filteredCategories.map((c) => (
                 <SelectItem key={c.id} value={c.name}>
                   {c.icon} {c.name}
                 </SelectItem>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useFinance } from "@/contexts/FinanceContext";
-import { formatCurrency, defaultCategories, Transaction } from "@/lib/mock-data";
+import { formatCurrency, Transaction } from "@/lib/mock-data";
 import { TransactionForm } from "@/components/TransactionForm";
 import { Search, Filter, Pencil, Trash2, X, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function Transactions() {
-  const { transactions, deleteTransaction } = useFinance();
+  const { transactions, categories, deleteTransaction } = useFinance();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [adding, setAdding] = useState(false);
@@ -88,7 +88,7 @@ export default function Transactions() {
 
         <div className="divide-y divide-border">
           {filtered.map((tx) => {
-            const cat = defaultCategories.find((c) => c.name === tx.category);
+            const cat = categories.find((c) => c.name === tx.category);
             return (
               <div
                 key={tx.id}
