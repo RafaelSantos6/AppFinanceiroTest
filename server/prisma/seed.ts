@@ -6,6 +6,23 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("Iniciando seed do banco de dados...");
 
+  // Remove categorias duplicadas (mantém apenas a mais antiga)
+  console.log("Limpando categorias duplicadas no banco...");
+  const allCategories = await prisma.category.findMany({
+    orderBy: { createdAt: "asc" }
+  });
+  
+  const seenCategories = new Set();
+  for (const cat of allCategories) {
+    const key = `${cat.userId}-${cat.name}-${cat.type}`;
+    if (seenCategories.has(key)) {
+      await prisma.category.delete({ where: { id: cat.id } });
+    } else {
+      seenCategories.add(key);
+    }
+  }
+  console.log("Limpeza de duplicadas concluída.");
+
   const adminEmail = "admin@ledger.com";
   const hashedPassword = await bcrypt.hash("admin123", 10);
 
@@ -32,21 +49,6 @@ async function main() {
           { name: "Dinheiro", type: "cash", balance: 340.0 },
           { name: "Cartão Visa", type: "credit", balance: -1250.0 },
           { name: "Poupança", type: "savings", balance: 12500.0 },
-        ],
-      },
-      categories: {
-        create: [
-          { name: "Alimentação", icon: "🍽️", color: "hsl(25, 95%, 53%)", type: "expense" },
-          { name: "Transporte", icon: "🚗", color: "hsl(221, 83%, 53%)", type: "expense" },
-          { name: "Moradia", icon: "🏠", color: "hsl(262, 83%, 58%)", type: "expense" },
-          { name: "Entretenimento", icon: "🎬", color: "hsl(330, 81%, 60%)", type: "expense" },
-          { name: "Saúde", icon: "💊", color: "hsl(142, 71%, 45%)", type: "expense" },
-          { name: "Compras", icon: "🛍️", color: "hsl(38, 92%, 50%)", type: "expense" },
-          { name: "Contas", icon: "⚡", color: "hsl(199, 89%, 48%)", type: "expense" },
-          { name: "Educação", icon: "📚", color: "hsl(47, 95%, 53%)", type: "expense" },
-          { name: "Salário", icon: "💰", color: "hsl(142, 71%, 45%)", type: "income" },
-          { name: "Freelance", icon: "💻", color: "hsl(221, 83%, 53%)", type: "income" },
-          { name: "Investimentos", icon: "📈", color: "hsl(262, 83%, 58%)", type: "income" },
         ],
       },
       budgets: {
@@ -79,8 +81,25 @@ async function main() {
     },
   });
 
+  await prisma.category.createMany({
+    data: [
+      { userId: user.id, name: "Alimentação", icon: "🍽️", color: "hsl(25, 95%, 53%)", type: "expense" },
+      { userId: user.id, name: "Transporte", icon: "🚗", color: "hsl(221, 83%, 53%)", type: "expense" },
+      { userId: user.id, name: "Moradia", icon: "🏠", color: "hsl(262, 83%, 58%)", type: "expense" },
+      { userId: user.id, name: "Entretenimento", icon: "🎬", color: "hsl(330, 81%, 60%)", type: "expense" },
+      { userId: user.id, name: "Saúde", icon: "💊", color: "hsl(142, 71%, 45%)", type: "expense" },
+      { userId: user.id, name: "Compras", icon: "🛍️", color: "hsl(38, 92%, 50%)", type: "expense" },
+      { userId: user.id, name: "Contas", icon: "⚡", color: "hsl(199, 89%, 48%)", type: "expense" },
+      { userId: user.id, name: "Educação", icon: "📚", color: "hsl(47, 95%, 53%)", type: "expense" },
+      { userId: user.id, name: "Salário", icon: "💰", color: "hsl(142, 71%, 45%)", type: "income" },
+      { userId: user.id, name: "Freelance", icon: "💻", color: "hsl(221, 83%, 53%)", type: "income" },
+      { userId: user.id, name: "Investimentos", icon: "📈", color: "hsl(262, 83%, 58%)", type: "income" },
+    ],
+    skipDuplicates: true,
+  });
+
   console.log(`✅ Usuário inicial criado com sucesso: ${user.email} (senha: admin123)`);
-  console.log("Banco de dados SQLite populado com dados de exemplo!");
+  console.log("Banco de dados populado com dados de exemplo!");
 }
 
 main()

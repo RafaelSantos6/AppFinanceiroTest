@@ -68,4 +68,6 @@ model Category {
   type      String   // "income" | "expense" | "both"
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([userId, name, type])
 }

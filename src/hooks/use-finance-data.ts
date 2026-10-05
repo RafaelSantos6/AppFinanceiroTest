@@ -74,11 +74,11 @@ export function useFinanceData() {
         setBudgets(cached ? JSON.parse(cached) : []);
       }
       if (cats !== null) {
-        setCategories([...defaultCategories, ...cats]);
+        setCategories(cats);
         localStorage.setItem(getStorageKey("categories"), JSON.stringify(cats));
       } else {
         const cached = localStorage.getItem(getStorageKey("categories"));
-        setCategories(cached ? [...defaultCategories, ...JSON.parse(cached)] : defaultCategories);
+        setCategories(cached ? JSON.parse(cached) : defaultCategories);
       }
     } catch (error) {
       console.error("Erro ao sincronizar finanças com backend:", error);

@@ -64,10 +64,6 @@ export async function register(req: Request, res: Response): Promise<void> {
         name,
         email: normalizedEmail,
         password: hashedPassword,
-        // Cria categorias padrão para o novo usuário
-        categories: {
-          create: defaultCategoriesData,
-        },
         // Cria uma conta inicial padrão
         accounts: {
           create: [
@@ -82,6 +78,12 @@ export async function register(req: Request, res: Response): Promise<void> {
         email: true,
         avatarUrl: true,
       },
+    });
+
+    // Cria categorias padrão para o novo usuário de forma idempotente
+    await prisma.category.createMany({
+      data: defaultCategoriesData.map((cat) => ({ ...cat, userId: user.id })),
+      skipDuplicates: true,
     });
 
     // Gera token JWT válido por 7 dias
