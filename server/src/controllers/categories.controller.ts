@@ -33,19 +33,6 @@ export async function createCategory(req: AuthenticatedRequest, res: Response): 
       return;
     }
 
-    const existingCategory = await prisma.category.findFirst({
-      where: {
-        userId,
-        name: parsed.data.name,
-        type: parsed.data.type,
-      },
-    });
-
-    if (existingCategory) {
-      res.status(409).json({ message: "Uma categoria com este nome e tipo já existe." });
-      return;
-    }
-
     const category = await prisma.category.create({
       data: {
         ...parsed.data,
