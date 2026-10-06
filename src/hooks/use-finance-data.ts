@@ -112,13 +112,14 @@ export function useFinanceData() {
   // Transações CRUD
   const addTransaction = useCallback(
     async (tx: Omit<Transaction, "id">) => {
-      const tempId = crypto.randomUUID();
-      const optimisticTx: Transaction = { ...tx, id: tempId };
-      setTransactions((prev) => [optimisticTx, ...prev]);
-
+      // Optamos por não fazer optimistic update aqui para simplificar, 
+      // já que uma única request pode gerar N transações (parcelas).
       try {
-        const created = await api.createTransaction(tx);
-        setTransactions((prev) => prev.map((t) => (t.id === tempId ? created : t)));
+        await api.createTransaction(tx);
+        // Recarrega transações para trazer todas as parcelas geradas
+        const updatedTxs = await api.getTransactions().catch(() => null);
+        if (updatedTxs) setTransactions(updatedTxs);
+
         // Recarrega contas para atualizar saldos sincronizados pelo backend
         const updatedAccounts = await api.getAccounts().catch(() => null);
         if (updatedAccounts) setAccounts(updatedAccounts);

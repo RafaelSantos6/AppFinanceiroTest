@@ -72,19 +72,31 @@ export const accountTypeLabels: Record<string, string> = {
 
 export const paymentMethods = ["Dinheiro", "Débito", "Crédito", "Transferência", "PIX"];
 
-export function calculateMonthlyTrend(transactions: Transaction[]): { month: string; income: number; expenses: number }[] {
+export function calculateMonthlyTrend(
+  transactions: Transaction[], 
+  baseMonth?: string // format "YYYY-MM"
+): { month: string; income: number; expenses: number }[] {
   const result: Record<string, { income: number; expenses: number }> = {};
   
-  // Initialize last 6 months
+  // Parse baseMonth or use current
+  let baseDate = new Date();
+  if (baseMonth) {
+    const [year, month] = baseMonth.split("-");
+    baseDate = new Date(parseInt(year), parseInt(month) - 1, 15); // use middle of month
+  }
+  
+  // Initialize last 6 months ending in baseDate
+  const monthsOrdered: string[] = [];
   for (let i = 5; i >= 0; i--) {
-    const d = new Date();
+    const d = new Date(baseDate.getTime());
     d.setMonth(d.getMonth() - i);
     const monthName = d.toLocaleDateString("pt-BR", { month: "short" });
     result[monthName] = { income: 0, expenses: 0 };
+    monthsOrdered.push(monthName);
   }
 
   transactions.forEach((tx) => {
-    const d = new Date(tx.date);
+    const d = new Date(tx.date + "T12:00:00Z"); // middle of day to avoid timezone shift
     const monthName = d.toLocaleDateString("pt-BR", { month: "short" });
     if (result[monthName]) {
       if (tx.type === "income") {
@@ -95,7 +107,7 @@ export function calculateMonthlyTrend(transactions: Transaction[]): { month: str
     }
   });
 
-  return Object.keys(result).map((month) => ({
+  return monthsOrdered.map((month) => ({
     month,
     income: result[month].income,
     expenses: result[month].expenses,

@@ -23,9 +23,9 @@ import { MonthYearSelector } from "@/components/MonthYearSelector";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function Reports() {
-  const { transactions, allTransactions, totalIncome, totalExpenses } = useFinance();
+  const { transactions, allTransactions, totalIncome, totalExpenses, selectedMonth } = useFinance();
 
-  const dynamicTrend = calculateMonthlyTrend(allTransactions);
+  const dynamicTrend = calculateMonthlyTrend(allTransactions, selectedMonth);
   const { toast } = useToast();
 
   // Calcula gastos reais por categoria diretamente das transações

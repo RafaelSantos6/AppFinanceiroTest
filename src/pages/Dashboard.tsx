@@ -26,8 +26,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 export default function Dashboard() {
-  const { transactions, budgets, totalIncome, totalExpenses, balance } = useFinance();
-  const dynamicTrend = calculateMonthlyTrend(transactions);
+  const { transactions, budgets, totalIncome, totalExpenses, balance, selectedMonth } = useFinance();
+  const dynamicTrend = calculateMonthlyTrend(transactions, selectedMonth);
 
   const categorySpending = budgets.map((b) => {
     const cat = defaultCategories.find((c) => c.name === b.category);
@@ -38,7 +38,7 @@ export default function Dashboard() {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 6);
 
-  const currentMonthYear = new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  const currentMonthYear = new Date(selectedMonth + "-15").toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
 
   return (
     <div className="space-y-6">

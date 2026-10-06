@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Transaction } from "@/lib/mock-data";
 
 interface TransactionFormProps {
@@ -30,6 +31,7 @@ export function TransactionForm({ onSubmit, initial }: TransactionFormProps) {
 
   const [recurrenceType, setRecurrenceType] = useState<"NONE" | "FIXED" | "INSTALLMENT">(initial?.recurrenceType ?? "NONE");
   const [installmentTotal, setInstallmentTotal] = useState<number | "">(initial?.installmentTotal ?? "");
+  const [isPaid, setIsPaid] = useState<boolean>(initial?.isPaid ?? true);
 
   const filteredCategories = categories.filter(
     (c) => c.type === type || c.type === "both"
@@ -48,6 +50,7 @@ export function TransactionForm({ onSubmit, initial }: TransactionFormProps) {
       paymentMethod,
       account,
       recurrenceType,
+      isPaid,
     };
 
     if (recurrenceType === "INSTALLMENT" && installmentTotal) {
@@ -196,6 +199,11 @@ export function TransactionForm({ onSubmit, initial }: TransactionFormProps) {
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      <div className="flex items-center space-x-2 pt-2">
+        <Switch id="is-paid" checked={isPaid} onCheckedChange={setIsPaid} />
+        <Label htmlFor="is-paid">Transação já foi paga/recebida?</Label>
       </div>
 
       <Button type="submit" className="w-full mt-2">
