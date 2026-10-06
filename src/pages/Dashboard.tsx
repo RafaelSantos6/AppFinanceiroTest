@@ -4,6 +4,7 @@ import {
   TrendingDown,
   TrendingUp,
   Wallet,
+  Repeat
 } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
 import { useFinance } from "@/contexts/FinanceContext";
@@ -22,10 +23,11 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import { Badge } from "@/components/ui/badge";
 
 export default function Dashboard() {
-  const { transactions, budgets, totalIncome, totalExpenses, balance } = useFinance();
-  const dynamicTrend = calculateMonthlyTrend(transactions);
+  const { transactions, budgets, totalIncome, totalExpenses, balance, selectedMonth } = useFinance();
+  const dynamicTrend = calculateMonthlyTrend(transactions, selectedMonth);
 
   const categorySpending = budgets.map((b) => {
     const cat = defaultCategories.find((c) => c.name === b.category);
@@ -36,7 +38,7 @@ export default function Dashboard() {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 6);
 
-  const currentMonthYear = new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  const currentMonthYear = new Date(selectedMonth + "-15").toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
 
   return (
     <div className="space-y-6">
@@ -137,7 +139,19 @@ export default function Dashboard() {
                 <div className="flex items-center gap-3 min-w-0">
                   <span className="text-lg">{cat?.icon ?? "📝"}</span>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{tx.description}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-sm font-medium truncate">{tx.description}</p>
+                      {tx.recurrenceType === "INSTALLMENT" && (
+                        <Badge variant="secondary" className="text-[10px] py-0 h-4 px-1.5 flex-shrink-0">
+                          {tx.installmentCurrent}/{tx.installmentTotal}
+                        </Badge>
+                      )}
+                      {tx.recurrenceType === "FIXED" && (
+                        <Badge variant="secondary" className="text-[10px] py-0 h-4 px-1.5 flex-shrink-0 gap-1">
+                          <Repeat className="w-2.5 h-2.5" /> Fixa
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       {tx.category} · {new Date(tx.date).toLocaleDateString("pt-BR", { month: "short", day: "numeric" })}
                     </p>

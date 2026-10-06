@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useFinance } from "@/contexts/FinanceContext";
 import { formatCurrency, Transaction } from "@/lib/mock-data";
 import { TransactionForm } from "@/components/TransactionForm";
-import { Search, Filter, Pencil, Trash2, X, Plus } from "lucide-react";
+import { Search, Filter, Pencil, Trash2, X, Plus, Repeat } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Select,
@@ -30,7 +31,7 @@ export default function Transactions() {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [adding, setAdding] = useState(false);
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingTx, setDeletingTx] = useState<Transaction | null>(null);
 
   const filtered = transactions
     .filter((t) => {
@@ -94,9 +95,19 @@ export default function Transactions() {
                 key={tx.id}
                 className="flex flex-col md:grid md:grid-cols-[1fr_120px_100px_140px_120px_80px] gap-1 md:gap-4 px-5 py-3.5 hover:bg-accent/50 transition-colors group"
               >
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2.5 min-w-0">
                   <span className="text-base">{cat?.icon ?? "📝"}</span>
                   <span className="text-sm font-medium truncate">{tx.description}</span>
+                  {tx.recurrenceType === "INSTALLMENT" && (
+                    <Badge variant="secondary" className="text-[10px] py-0 h-4 px-1.5 flex-shrink-0">
+                      {tx.installmentCurrent}/{tx.installmentTotal}
+                    </Badge>
+                  )}
+                  {tx.recurrenceType === "FIXED" && (
+                    <Badge variant="secondary" className="text-[10px] py-0 h-4 px-1.5 flex-shrink-0 gap-1">
+                      <Repeat className="w-2.5 h-2.5" /> Fixa
+                    </Badge>
+                  )}
                 </div>
                 <span className="text-sm text-muted-foreground hidden md:block truncate">{tx.category}</span>
                 <span className="text-sm text-muted-foreground hidden md:block">
@@ -110,7 +121,7 @@ export default function Transactions() {
                   <button onClick={() => setEditingTx(tx)} className="w-7 h-7 rounded-md bg-accent flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
-                  <button onClick={() => setDeletingId(tx.id)} className="w-7 h-7 rounded-md bg-accent flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors">
+                  <button onClick={() => setDeletingTx(tx)} className="w-7 h-7 rounded-md bg-accent flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -125,7 +136,7 @@ export default function Transactions() {
                     <button onClick={() => setEditingTx(tx)} className="w-7 h-7 rounded-md bg-accent flex items-center justify-center text-muted-foreground">
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
-                    <button onClick={() => setDeletingId(tx.id)} className="w-7 h-7 rounded-md bg-accent flex items-center justify-center text-muted-foreground">
+                    <button onClick={() => setDeletingTx(tx)} className="w-7 h-7 rounded-md bg-accent flex items-center justify-center text-muted-foreground">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -156,7 +167,7 @@ export default function Transactions() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 100, opacity: 0 }}
               transition={{ type: "tween", ease: [0.2, 0, 0, 1], duration: 0.25 }}
-              className="bg-card rounded-xl shadow-card w-full max-w-lg p-6"
+              className="bg-card rounded-xl shadow-card w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-5">
@@ -186,7 +197,7 @@ export default function Transactions() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 100, opacity: 0 }}
               transition={{ type: "tween", ease: [0.2, 0, 0, 1], duration: 0.25 }}
-              className="bg-card rounded-xl shadow-card w-full max-w-lg p-6"
+              className="bg-card rounded-xl shadow-card w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-5">
@@ -202,22 +213,41 @@ export default function Transactions() {
       </AnimatePresence>
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deletingId} onOpenChange={() => setDeletingId(null)}>
+      <AlertDialog open={!!deletingTx} onOpenChange={() => setDeletingTx(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir transação?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. A transação será removida permanentemente.
+              {deletingTx?.recurrenceGroupId 
+                ? "Esta transação faz parte de uma série. Você deseja excluir apenas esta ou esta e todas as futuras?"
+                : "Esta ação não pode ser desfeita. A transação será removida permanentemente."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => { if (deletingId) { deleteTransaction(deletingId); setDeletingId(null); } }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Excluir
-            </AlertDialogAction>
+            {deletingTx?.recurrenceGroupId ? (
+              <>
+                <AlertDialogAction
+                  onClick={() => { if (deletingTx) { deleteTransaction(deletingTx.id, false); setDeletingTx(null); } }}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Apenas Esta
+                </AlertDialogAction>
+                <AlertDialogAction
+                  onClick={() => { if (deletingTx) { deleteTransaction(deletingTx.id, true); setDeletingTx(null); } }}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Todas Futuras
+                </AlertDialogAction>
+              </>
+            ) : (
+              <AlertDialogAction
+                onClick={() => { if (deletingTx) { deleteTransaction(deletingTx.id); setDeletingTx(null); } }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Excluir
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

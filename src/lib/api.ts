@@ -73,8 +73,12 @@ export const api = {
     return res.json();
   },
 
-  async deleteTransaction(id: string): Promise<void> {
-    const res = await fetch(`${API_BASE_URL}/transactions/${id}`, {
+  async deleteTransaction(id: string, deleteAllFuture?: boolean): Promise<void> {
+    const url = new URL(`${API_BASE_URL}/transactions/${id}`);
+    if (deleteAllFuture) {
+      url.searchParams.append("deleteAllFuture", "true");
+    }
+    const res = await fetch(url.toString(), {
       method: "DELETE",
       headers: { ...getAuthHeader() },
     });

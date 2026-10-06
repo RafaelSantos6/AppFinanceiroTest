@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Transaction } from "@/lib/mock-data";
 
 interface TransactionFormProps {
@@ -28,6 +29,10 @@ export function TransactionForm({ onSubmit, initial }: TransactionFormProps) {
   const [paymentMethod, setPaymentMethod] = useState(initial?.paymentMethod ?? "");
   const [account, setAccount] = useState(initial?.account ?? "");
 
+  const [recurrenceType, setRecurrenceType] = useState<"NONE" | "FIXED" | "INSTALLMENT">(initial?.recurrenceType ?? "NONE");
+  const [installmentTotal, setInstallmentTotal] = useState<number | "">(initial?.installmentTotal ?? "");
+  const [isPaid, setIsPaid] = useState<boolean>(initial?.isPaid ?? true);
+
   const filteredCategories = categories.filter(
     (c) => c.type === type || c.type === "both"
   );
@@ -36,7 +41,7 @@ export function TransactionForm({ onSubmit, initial }: TransactionFormProps) {
     e.preventDefault();
     if (!amount || !category) return;
 
-    const data = {
+    const data: Omit<Transaction, "id"> = {
       amount: parseFloat(amount),
       type,
       category,
@@ -44,7 +49,13 @@ export function TransactionForm({ onSubmit, initial }: TransactionFormProps) {
       date,
       paymentMethod,
       account,
+      recurrenceType,
+      isPaid,
     };
+
+    if (recurrenceType === "INSTALLMENT" && installmentTotal) {
+      data.installmentTotal = Number(installmentTotal);
+    }
 
     if (initial) {
       updateTransaction(initial.id, data);
@@ -53,6 +64,10 @@ export function TransactionForm({ onSubmit, initial }: TransactionFormProps) {
     }
     onSubmit();
   };
+
+  const parsedAmount = parseFloat(amount) || 0;
+  const numInstallments = typeof installmentTotal === "number" ? installmentTotal : parseInt(installmentTotal as string) || 1;
+  const installmentValue = numInstallments > 1 ? (parsedAmount / numInstallments) : parsedAmount;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -126,6 +141,43 @@ export function TransactionForm({ onSubmit, initial }: TransactionFormProps) {
 
       <div className="grid grid-cols-2 gap-3">
         <div>
+          <Label className="text-label mb-1.5 block">Frequência</Label>
+          <Select 
+            value={recurrenceType} 
+            onValueChange={(val) => setRecurrenceType(val as "NONE"|"FIXED"|"INSTALLMENT")}
+          >
+            <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="NONE">Única</SelectItem>
+              <SelectItem value="FIXED">Fixa (Mensal)</SelectItem>
+              <SelectItem value="INSTALLMENT">Parcelada</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {recurrenceType === "INSTALLMENT" && (
+          <div>
+            <Label className="text-label mb-1.5 block">Parcelas</Label>
+            <Input 
+              type="number" 
+              min="2" 
+              max="48"
+              value={installmentTotal}
+              onChange={(e) => setInstallmentTotal(e.target.value === "" ? "" : Number(e.target.value))}
+              required
+            />
+          </div>
+        )}
+      </div>
+
+      {recurrenceType === "INSTALLMENT" && numInstallments > 1 && parsedAmount > 0 && (
+        <div className="text-sm text-muted-foreground bg-accent/50 p-2 rounded-md">
+          Resumo: {numInstallments}x de {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(installmentValue)}
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
           <Label className="text-label mb-1.5 block">Forma de Pagamento</Label>
           <Select value={paymentMethod} onValueChange={setPaymentMethod}>
             <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
@@ -147,6 +199,11 @@ export function TransactionForm({ onSubmit, initial }: TransactionFormProps) {
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      <div className="flex items-center space-x-2 pt-2">
+        <Switch id="is-paid" checked={isPaid} onCheckedChange={setIsPaid} />
+        <Label htmlFor="is-paid">Transação já foi paga/recebida?</Label>
       </div>
 
       <Button type="submit" className="w-full mt-2">
