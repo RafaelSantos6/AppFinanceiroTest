@@ -95,7 +95,6 @@ async function main() {
       { userId: user.id, name: "Freelance", icon: "💻", color: "hsl(221, 83%, 53%)", type: "income" },
       { userId: user.id, name: "Investimentos", icon: "📈", color: "hsl(262, 83%, 58%)", type: "income" },
     ],
-    skipDuplicates: true,
   });
 
   console.log(`✅ Usuário inicial criado com sucesso: ${user.email} (senha: admin123)`);

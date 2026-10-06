@@ -163,7 +163,7 @@ export function TransactionForm({ onSubmit, initial }: TransactionFormProps) {
               min="2" 
               max="48"
               value={installmentTotal}
-              onChange={(e) => setInstallmentTotal(e.target.value)}
+              onChange={(e) => setInstallmentTotal(e.target.value === "" ? "" : Number(e.target.value))}
               required
             />
           </div>

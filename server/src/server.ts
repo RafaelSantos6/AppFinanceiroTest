@@ -34,6 +34,6 @@ app.use("/api/categories", categoriesRoutes);
 
 app.listen(PORT, () => {
   console.log(`🚀 Servidor backend rodando com sucesso em http://localhost:${PORT}`);
-  console.log(`📊 Banco de dados SQLite conectado.`);
+  console.log(`📊 Banco de dados conectado via Prisma.`);
   console.log(`🔐 Rotas de autenticação disponíveis em http://localhost:${PORT}/api/auth`);
 });
