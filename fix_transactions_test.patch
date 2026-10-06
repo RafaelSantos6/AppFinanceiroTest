@@ -1,0 +1,13 @@
+--- src/test/Transactions.test.tsx
++++ src/test/Transactions.test.tsx
+@@ -23,8 +23,9 @@
+     vi.clearAllMocks();
+   });
+ 
+   afterEach(() => {
+-    document.body.innerHTML = '';
++    document.body.removeAttribute('style');
++    document.body.removeAttribute('data-scroll-locked');
+   });
+ 
+   it("should handle simple delete", async () => {

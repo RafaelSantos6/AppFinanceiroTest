@@ -1,0 +1,13 @@
+--- src/test/use-finance-data.test.tsx
++++ src/test/use-finance-data.test.tsx
+@@ -43,6 +43,10 @@
+       user: mockUser,
+       isAuthenticated: true,
+     });
++    (api.getTransactions as any).mockResolvedValue([]);
++    (api.getAccounts as any).mockResolvedValue([]);
++    (api.getBudgets as any).mockResolvedValue([]);
++    (api.getCategories as any).mockResolvedValue([]);
+   });
+ 
+   it("should send recurrenceType, installmentTotal and isPaid to API and update state with returned installments", async () => {

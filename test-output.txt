@@ -1,0 +1,41 @@
+
+ RUN  v5.0.3 /home/rafael-ricetti/Documentos/projetos/AppFinanceiroTest
+
+ ✓ src/test/api.test.ts (13 tests) 25ms
+ ❯ src/test/AuthContext.test.tsx (10 tests | 1 failed) 74ms
+   ❯ AuthContext (10)
+     ✓ should initialize with values from localStorage 19ms
+     × should handle corrupted localStorage gracefully 16ms
+     ✓ should throw error if useAuth is used outside provider 11ms
+     ✓ login (3)
+       ✓ should login successfully via API 5ms
+       ✓ should handle API failure 5ms
+       ✓ should fallback to mock login on network error 3ms
+     ✓ register (3)
+       ✓ should register successfully via API 3ms
+       ✓ should handle API register failure 2ms
+       ✓ should fallback to mock register on network error 4ms
+     ✓ logout & loginDemo (1)
+       ✓ should login with demo user and logout 2ms
+ ✓ src/test/use-finance-data.test.tsx (6 tests) 45ms
+ ✓ src/test/FinanceContext.test.tsx (2 tests) 37ms
+ ❯ src/test/Budgets.test.tsx (2 tests | 2 failed) 92ms
+   ❯ Budgets Page (2)
+     × renders budget list and overall progress 75ms
+     × opens form and adds new budget 14ms
+ ✓ src/test/Reports.test.tsx (1 test) 131ms
+ ✓ src/test/Categories.test.tsx (2 tests) 299ms
+ ❯ src/test/Dashboard.test.tsx (1 test | 1 failed) 91ms
+   ❯ Dashboard Page (1)
+     × should render stat cards and recent transactions 88ms
+ ✓ src/test/Transactions.test.tsx (2 tests) 189ms
+ ✓ src/test/Accounts.test.tsx (2 tests) 281ms
+ ✓ src/test/TransactionForm.test.tsx (1 test) 638ms
+   ✓ TransactionForm (1)
+     ✓ should submit the form with installment data when 'Parcelada' is selected 635ms
+
+ Test Files  3 failed | 8 passed (11)
+      Tests  4 failed | 38 passed (42)
+   Start at  15:41:14
+   Duration  1.81s (environment 46%, import 24%, tests 15%, transform 9%, setup 5%, worker 1%)
+

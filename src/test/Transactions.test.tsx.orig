@@ -1,0 +1,65 @@
+import React from "react";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import Transactions from "@/pages/Transactions";
+import { useFinance } from "@/contexts/FinanceContext";
+
+vi.mock("@/contexts/FinanceContext", () => ({
+  useFinance: vi.fn(),
+}));
+
+vi.mock("lucide-react", async (importOriginal) => {
+  const mod = await importOriginal<typeof import("lucide-react")>();
+  return {
+    ...mod,
+    Trash2: () => <svg data-testid="trash-icon" />,
+  };
+});
+
+const mockDeleteTransaction = vi.fn();
+
+describe("Transactions Page", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it("should handle simple delete", async () => {
+    (useFinance as any).mockReturnValue({
+      transactions: [{ id: "tx1", description: "MySalary", amount: 5000, type: "income", category: "SalaryCat", date: "2023-10-05", accountId: "acc1" }],
+      categories: [],
+      deleteTransaction: mockDeleteTransaction,
+    });
+    
+    render(<Transactions />);
+    
+    const deleteIcons = screen.getAllByTestId("trash-icon");
+    fireEvent.click(deleteIcons[0].closest("button")!);
+    
+    const confirmButton = await screen.findByRole("button", { name: "Excluir" });
+    fireEvent.click(confirmButton);
+    
+    expect(mockDeleteTransaction).toHaveBeenCalledWith("tx1", undefined);
+  });
+
+  it("should handle delete with deleteAllFuture for grouped transactions", async () => {
+    (useFinance as any).mockReturnValue({
+      transactions: [{ id: "tx2", description: "Groceries", amount: 300, type: "expense", category: "Food", date: "2023-10-10", accountId: "acc1", recurrenceGroupId: "group1", recurrenceType: "FIXED" }],
+      categories: [],
+      deleteTransaction: mockDeleteTransaction,
+    });
+    
+    render(<Transactions />);
+    
+    const deleteIcons = screen.getAllByTestId("trash-icon");
+    fireEvent.click(deleteIcons[0].closest("button")!);
+    
+    const cascadeButton = await screen.findByRole("button", { name: "Excluir esta e futuras" });
+    fireEvent.click(cascadeButton);
+    
+    expect(mockDeleteTransaction).toHaveBeenCalledWith("tx2", true);
+  });
+});

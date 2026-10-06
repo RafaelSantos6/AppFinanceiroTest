@@ -42,8 +42,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const savedUser = localStorage.getItem(STORAGE_KEY_USER);
 
       if (savedToken && savedUser) {
+        const parsedUser = JSON.parse(savedUser);
         setToken(savedToken);
-        setUser(JSON.parse(savedUser));
+        setUser(parsedUser);
       }
     } catch (e) {
       console.error("Falha ao restaurar sessão de login:", e);
