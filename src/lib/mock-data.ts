@@ -7,6 +7,11 @@ export interface Transaction {
   date: string;
   paymentMethod: string;
   account: string;
+  recurrenceType?: "NONE" | "FIXED" | "INSTALLMENT";
+  installmentCurrent?: number;
+  installmentTotal?: number;
+  recurrenceGroupId?: string;
+  isPaid?: boolean;
 }
 
 export interface Category {

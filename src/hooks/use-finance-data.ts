@@ -144,10 +144,15 @@ export function useFinanceData() {
   );
 
   const deleteTransaction = useCallback(
-    async (id: string) => {
-      setTransactions((prev) => prev.filter((t) => t.id !== id));
+    async (id: string, deleteAllFuture?: boolean) => {
+      setTransactions((prev) => prev.filter((t) => t.id !== id)); // Optimistic for current at least
       try {
-        await api.deleteTransaction(id);
+        await api.deleteTransaction(id, deleteAllFuture);
+        if (deleteAllFuture) {
+           // Refetch all to ensure group is deleted
+           const updatedTxs = await api.getTransactions().catch(() => null);
+           if (updatedTxs) setTransactions(updatedTxs);
+        }
         const updatedAccounts = await api.getAccounts().catch(() => null);
         if (updatedAccounts) setAccounts(updatedAccounts);
       } catch (err) {
