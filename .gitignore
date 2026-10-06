@@ -46,3 +46,6 @@ coverage
 .eslintcache
 .parcel-cache
 .vite
+
+coverage/
+server/coverage/
