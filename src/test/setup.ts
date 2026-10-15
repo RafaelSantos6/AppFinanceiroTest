@@ -1,4 +1,4 @@
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 
 Object.defineProperty(window, "matchMedia", {
   writable: true,
@@ -26,3 +26,11 @@ class ResizeObserver {
   disconnect() {}
 }
 window.ResizeObserver = ResizeObserver;
+
+class IntersectionObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+window.IntersectionObserver = IntersectionObserver as unknown as typeof window.IntersectionObserver;
+

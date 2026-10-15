@@ -1,5 +1,6 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import "@testing-library/jest-dom/vitest";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import Budgets from "@/pages/Budgets";
@@ -16,40 +17,87 @@ describe("Budgets Page", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
-    class MockIntersectionObserver {
-      observe() {}
-      unobserve() {}
-      disconnect() {}
-    }
-    window.IntersectionObserver = MockIntersectionObserver as any;
 
-    (useFinance as any).mockReturnValue({
+    vi.mocked(useFinance).mockReturnValue({
       budgets: [
         { id: "b1", category: "Alimentação", limit: 1000, spent: 800 },
       ],
       addBudget: addBudgetMock,
       updateBudget: updateBudgetMock,
       deleteBudget: deleteBudgetMock,
-    });
+    } as unknown as ReturnType<typeof useFinance>);
   });
 
   it("renders budget list and overall progress", () => {
     render(<Budgets />);
     expect(screen.getByText("Alimentação")).toBeInTheDocument();
     expect(screen.getByText("Orçamento Geral")).toBeInTheDocument();
+    expect(screen.getByText(/80%/)).toBeInTheDocument();
   });
 
   it("opens form and adds new budget", async () => {
+    const user = userEvent.setup();
     render(<Budgets />);
-    fireEvent.click(screen.getByText("Novo Orçamento"));
-    
+
+    // Click "Novo Orçamento"
+    await user.click(screen.getByText("Novo Orçamento"));
+    expect(screen.getByRole("heading", { name: "Novo Orçamento" })).toBeInTheDocument();
+
+    // Select a category with Radix Select (combobox)
+    const selectTrigger = screen.getByRole("combobox");
+    selectTrigger.focus();
+    await user.keyboard("{Enter}{ArrowDown}{Enter}");
+
+    // Type monthly limit
     const limitInput = screen.getByPlaceholderText("0,00");
-    fireEvent.change(limitInput, { target: { value: "500" } });
-    
-    // Note: the Select component from Radix can be tricky to test without full interactions, 
-    // so we mock its selection or just test the click for now.
-    // We will bypass it by assuming user can submit if category is selected,
-    // but in this test, category starts empty. We won't test the actual save since radix select is hard to use via simple fireEvent.
+    await user.type(limitInput, "500");
+
+    // Submit form
+    await user.click(screen.getByRole("button", { name: "Criar Orçamento" }));
+
+    expect(addBudgetMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        limit: 500,
+        spent: 0,
+      })
+    );
+  });
+
+  it("opens edit form and updates budget limit", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<Budgets />);
+
+    // Find the pencil edit button
+    const editButton = container.querySelector(".lucide-pencil")?.closest("button");
+    expect(editButton).toBeTruthy();
+    await user.click(editButton!);
+
+    expect(screen.getByRole("heading", { name: "Editar Orçamento" })).toBeInTheDocument();
+
+    const limitInput = screen.getByDisplayValue("1000");
+    await user.clear(limitInput);
+    await user.type(limitInput, "1200");
+
+    await user.click(screen.getByRole("button", { name: "Atualizar" }));
+
+    expect(updateBudgetMock).toHaveBeenCalledWith("b1", { limit: 1200 });
+  });
+
+  it("opens delete dialog and deletes budget", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<Budgets />);
+
+    // Find the trash delete button
+    const deleteButton = container.querySelector(".lucide-trash2")?.closest("button");
+    expect(deleteButton).toBeTruthy();
+    await user.click(deleteButton!);
+
+    // AlertDialog should be displayed
+    expect(screen.getByText("Excluir orçamento?")).toBeInTheDocument();
+
+    const confirmDeleteBtn = screen.getByRole("button", { name: "Excluir" });
+    await user.click(confirmDeleteBtn);
+
+    expect(deleteBudgetMock).toHaveBeenCalledWith("b1");
   });
 });
