@@ -7,6 +7,7 @@ import {
   Repeat
 } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
+import { MonthYearSelector } from "@/components/MonthYearSelector";
 import { useFinance } from "@/contexts/FinanceContext";
 import {
   calculateMonthlyTrend,
@@ -43,9 +44,12 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-heading">Painel</h1>
-        <p className="text-sm text-muted-foreground capitalize">Resumo de {currentMonthYear}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-heading">Painel</h1>
+          <p className="text-sm text-muted-foreground capitalize">Resumo de {currentMonthYear}</p>
+        </div>
+        <MonthYearSelector />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

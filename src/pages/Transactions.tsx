@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useFinance } from "@/contexts/FinanceContext";
 import { formatCurrency, Transaction } from "@/lib/mock-data";
 import { TransactionForm } from "@/components/TransactionForm";
+import { MonthYearSelector } from "@/components/MonthYearSelector";
 import { Search, Filter, Pencil, Trash2, X, Plus, Repeat } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -43,15 +44,18 @@ export default function Transactions() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-heading">Transações</h1>
           <p className="text-sm text-muted-foreground">{filtered.length} transações</p>
         </div>
-        <Button onClick={() => setAdding(true)} className="gap-2">
-          <Plus className="w-4 h-4" />
-          Nova Transação
-        </Button>
+        <div className="flex items-center gap-3">
+          <MonthYearSelector />
+          <Button onClick={() => setAdding(true)} className="gap-2">
+            <Plus className="w-4 h-4" />
+            Nova Transação
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">

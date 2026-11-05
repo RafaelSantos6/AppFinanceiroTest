@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useFinance } from "@/contexts/FinanceContext";
+import { MonthYearSelector } from "@/components/MonthYearSelector";
 import { formatCurrency, defaultCategories, Budget, Category } from "@/lib/mock-data";
 import { AlertTriangle, Plus, Pencil, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -70,7 +71,7 @@ function BudgetForm({ initial, categories, existingCategories, onSubmit, onCance
 }
 
 export default function Budgets() {
-  const { budgets, categories, addBudget, updateBudget, deleteBudget } = useFinance();
+  const { budgets, categories, selectedMonth, addBudget, updateBudget, deleteBudget } = useFinance();
   const activeCategories = categories?.length ? categories : defaultCategories;
   const [showForm, setShowForm] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
@@ -79,20 +80,25 @@ export default function Budgets() {
   const totalBudget = budgets.reduce((sum, b) => sum + b.limit, 0);
   const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0);
   const existingCategories = budgets.map((b) => b.category);
+  const activeMonth = selectedMonth || new Date().toISOString().slice(0, 7);
+  const currentMonthLabel = new Date(activeMonth + "-15").toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-heading">Orçamentos</h1>
           <p className="text-sm text-muted-foreground capitalize">
-            {new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" })} · {formatCurrency(totalSpent)} de {formatCurrency(totalBudget)} usado
+            {currentMonthLabel} · {formatCurrency(totalSpent)} de {formatCurrency(totalBudget)} usado
           </p>
         </div>
-        <Button size="sm" onClick={() => { setShowForm(true); setEditingBudget(null); }}>
-          <Plus className="w-4 h-4 mr-2" />
-          Novo Orçamento
-        </Button>
+        <div className="flex items-center gap-3">
+          <MonthYearSelector />
+          <Button size="sm" onClick={() => { setShowForm(true); setEditingBudget(null); }}>
+            <Plus className="w-4 h-4 mr-2" />
+            Novo Orçamento
+          </Button>
+        </div>
       </div>
 
       {/* Form modal */}
