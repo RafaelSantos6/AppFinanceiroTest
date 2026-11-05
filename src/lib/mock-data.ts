@@ -36,6 +36,16 @@ export interface Budget {
   spent: number;
 }
 
+export interface Goal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  deadline?: string | null;
+  icon: string;
+  color: string;
+}
+
 export const defaultCategories: Category[] = [
   { id: "1", name: "Alimentação", icon: "🍽️", color: "hsl(25, 95%, 53%)", type: "expense" },
   { id: "2", name: "Transporte", icon: "🚗", color: "hsl(221, 83%, 53%)", type: "expense" },
