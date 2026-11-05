@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useFinance } from "@/contexts/FinanceContext";
-import { formatCurrency, defaultCategories, Budget } from "@/lib/mock-data";
+import { formatCurrency, defaultCategories, Budget, Category } from "@/lib/mock-data";
 import { AlertTriangle, Plus, Pencil, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,8 +24,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-function BudgetForm({ initial, existingCategories, onSubmit, onCancel }: {
+function BudgetForm({ initial, categories, existingCategories, onSubmit, onCancel }: {
   initial?: Budget;
+  categories: Category[];
   existingCategories: string[];
   onSubmit: (data: { category: string; limit: number }) => void;
   onCancel: () => void;
@@ -33,8 +34,8 @@ function BudgetForm({ initial, existingCategories, onSubmit, onCancel }: {
   const [category, setCategory] = useState(initial?.category ?? "");
   const [limit, setLimit] = useState(initial?.limit?.toString() ?? "");
 
-  const availableCategories = defaultCategories
-    .filter((c) => c.type === "expense")
+  const availableCategories = categories
+    .filter((c) => c.type === "expense" || c.type === "both")
     .filter((c) => initial?.category === c.name || !existingCategories.includes(c.name));
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -69,7 +70,8 @@ function BudgetForm({ initial, existingCategories, onSubmit, onCancel }: {
 }
 
 export default function Budgets() {
-  const { budgets, addBudget, updateBudget, deleteBudget } = useFinance();
+  const { budgets, categories, addBudget, updateBudget, deleteBudget } = useFinance();
+  const activeCategories = categories?.length ? categories : defaultCategories;
   const [showForm, setShowForm] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -119,6 +121,7 @@ export default function Budgets() {
               </div>
               <BudgetForm
                 initial={editingBudget ?? undefined}
+                categories={activeCategories}
                 existingCategories={existingCategories}
                 onSubmit={(data) => {
                   if (editingBudget) {
@@ -166,7 +169,7 @@ export default function Budgets() {
           const pct = budget.limit > 0 ? (budget.spent / budget.limit) * 100 : 0;
           const isWarning = pct >= 70 && pct < 90;
           const isDanger = pct >= 90;
-          const cat = defaultCategories.find((c) => c.name === budget.category);
+          const cat = activeCategories.find((c) => c.name === budget.category);
 
           return (
             <motion.div

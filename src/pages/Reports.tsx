@@ -23,7 +23,8 @@ import { MonthYearSelector } from "@/components/MonthYearSelector";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function Reports() {
-  const { transactions, allTransactions, totalIncome, totalExpenses, selectedMonth } = useFinance();
+  const { transactions, allTransactions, categories, totalIncome, totalExpenses, selectedMonth } = useFinance();
+  const activeCategories = categories?.length ? categories : defaultCategories;
 
   const dynamicTrend = calculateMonthlyTrend(allTransactions, selectedMonth);
   const { toast } = useToast();
@@ -38,7 +39,7 @@ export default function Reports() {
     });
 
   const categoryData = Array.from(categoryExpensesMap.entries()).map(([name, value]) => {
-    const cat = defaultCategories.find((c) => c.name === name);
+    const cat = activeCategories.find((c) => c.name === name);
     return {
       name,
       value,

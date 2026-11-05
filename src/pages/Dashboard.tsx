@@ -26,11 +26,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 export default function Dashboard() {
-  const { transactions, budgets, totalIncome, totalExpenses, balance, selectedMonth } = useFinance();
-  const dynamicTrend = calculateMonthlyTrend(transactions, selectedMonth);
+  const { transactions, allTransactions, budgets, categories, totalIncome, totalExpenses, balance, selectedMonth } = useFinance();
+  const activeCategories = categories?.length ? categories : defaultCategories;
+  const dynamicTrend = calculateMonthlyTrend(allTransactions ?? transactions, selectedMonth);
 
   const categorySpending = budgets.map((b) => {
-    const cat = defaultCategories.find((c) => c.name === b.category);
+    const cat = activeCategories.find((c) => c.name === b.category);
     return { name: b.category, spent: b.spent, limit: b.limit, color: cat?.color ?? "hsl(221,83%,53%)" };
   });
 
@@ -133,7 +134,7 @@ export default function Dashboard() {
         </div>
         <div className="divide-y divide-border">
           {recentTransactions.map((tx) => {
-            const cat = defaultCategories.find((c) => c.name === tx.category);
+            const cat = activeCategories.find((c) => c.name === tx.category);
             return (
               <div key={tx.id} className="flex items-center justify-between px-5 py-3.5 hover:bg-accent/50 transition-colors">
                 <div className="flex items-center gap-3 min-w-0">
