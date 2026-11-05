@@ -1,4 +1,4 @@
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 
 Object.defineProperty(window, "matchMedia", {
   writable: true,
@@ -13,3 +13,24 @@ Object.defineProperty(window, "matchMedia", {
     dispatchEvent: () => {},
   }),
 });
+
+if (typeof Element !== 'undefined') {
+  Element.prototype.hasPointerCapture = function() { return false; };
+  Element.prototype.setPointerCapture = function() { };
+  Element.prototype.releasePointerCapture = function() { };
+  Element.prototype.scrollIntoView = function() { };
+}
+class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+window.ResizeObserver = ResizeObserver;
+
+class IntersectionObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+window.IntersectionObserver = IntersectionObserver as unknown as typeof window.IntersectionObserver;
+

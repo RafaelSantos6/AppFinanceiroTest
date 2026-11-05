@@ -7,6 +7,7 @@ import {
   Repeat
 } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
+import { MonthYearSelector } from "@/components/MonthYearSelector";
 import { useFinance } from "@/contexts/FinanceContext";
 import {
   calculateMonthlyTrend,
@@ -26,11 +27,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 export default function Dashboard() {
-  const { transactions, budgets, totalIncome, totalExpenses, balance, selectedMonth } = useFinance();
-  const dynamicTrend = calculateMonthlyTrend(transactions, selectedMonth);
+  const { transactions, allTransactions, budgets, categories, goals = [], totalIncome, totalExpenses, balance, selectedMonth } = useFinance();
+  const activeCategories = categories?.length ? categories : defaultCategories;
+  const dynamicTrend = calculateMonthlyTrend(allTransactions ?? transactions, selectedMonth);
 
   const categorySpending = budgets.map((b) => {
-    const cat = defaultCategories.find((c) => c.name === b.category);
+    const cat = activeCategories.find((c) => c.name === b.category);
     return { name: b.category, spent: b.spent, limit: b.limit, color: cat?.color ?? "hsl(221,83%,53%)" };
   });
 
@@ -42,9 +44,12 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-heading">Painel</h1>
-        <p className="text-sm text-muted-foreground capitalize">Resumo de {currentMonthYear}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-heading">Painel</h1>
+          <p className="text-sm text-muted-foreground capitalize">Resumo de {currentMonthYear}</p>
+        </div>
+        <MonthYearSelector />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -127,13 +132,47 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {goals.length > 0 && (
+        <div className="bg-card rounded-xl shadow-card p-5">
+          <h2 className="text-heading mb-4">Metas Financeiras</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {goals.slice(0, 3).map((goal) => {
+              const pct = goal.targetAmount > 0 ? Math.min((goal.currentAmount / goal.targetAmount) * 100, 100) : 0;
+              return (
+                <div key={goal.id} className="p-3.5 rounded-lg border border-border/60 bg-accent/20 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium flex items-center gap-2 truncate">
+                      <span>{goal.icon}</span>
+                      <span className="truncate">{goal.name}</span>
+                    </span>
+                    <span className="text-xs font-mono tabular-nums text-muted-foreground">
+                      {Math.round(pct)}%
+                    </span>
+                  </div>
+                  <div className="h-2 bg-accent rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{ width: `${pct}%`, backgroundColor: goal.color }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-xs font-mono tabular-nums text-muted-foreground">
+                    <span>{formatCurrency(goal.currentAmount)}</span>
+                    <span>{formatCurrency(goal.targetAmount)}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="bg-card rounded-xl shadow-card">
         <div className="p-5 border-b border-border">
           <h2 className="text-heading">Transações Recentes</h2>
         </div>
         <div className="divide-y divide-border">
           {recentTransactions.map((tx) => {
-            const cat = defaultCategories.find((c) => c.name === tx.category);
+            const cat = activeCategories.find((c) => c.name === tx.category);
             return (
               <div key={tx.id} className="flex items-center justify-between px-5 py-3.5 hover:bg-accent/50 transition-colors">
                 <div className="flex items-center gap-3 min-w-0">

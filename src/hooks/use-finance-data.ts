@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Transaction, Account, Budget, Category, defaultCategories } from "@/lib/mock-data";
+import { Transaction, Account, Budget, Category, Goal, defaultCategories } from "@/lib/mock-data";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -9,6 +9,7 @@ export function useFinanceData() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [categories, setCategories] = useState<Category[]>(defaultCategories);
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [isLoading, setIsLoading] = useState(false);
   const previousUserIdRef = useRef<string | null>(null);
@@ -38,16 +39,18 @@ export function useFinanceData() {
       setAccounts([]);
       setBudgets([]);
       setCategories(defaultCategories);
+      setGoals([]);
       return;
     }
 
     setIsLoading(true);
     try {
-      const [txs, accs, bdgs, cats] = await Promise.all([
+      const [txs, accs, bdgs, cats, gls] = await Promise.all([
         api.getTransactions().catch(() => null),
         api.getAccounts().catch(() => null),
         api.getBudgets().catch(() => null),
         api.getCategories().catch(() => null),
+        api.getGoals ? api.getGoals().catch(() => null) : Promise.resolve(null),
       ]);
 
       if (txs !== null) {
@@ -80,6 +83,14 @@ export function useFinanceData() {
         const cached = localStorage.getItem(getStorageKey("categories"));
         setCategories(cached ? JSON.parse(cached) : defaultCategories);
       }
+
+      if (gls !== null) {
+        setGoals(gls);
+        localStorage.setItem(getStorageKey("goals"), JSON.stringify(gls));
+      } else {
+        const cached = localStorage.getItem(getStorageKey("goals"));
+        setGoals(cached ? JSON.parse(cached) : []);
+      }
     } catch (error) {
       console.error("Erro ao sincronizar finanças com backend:", error);
     } finally {
@@ -96,6 +107,7 @@ export function useFinanceData() {
       setAccounts([]);
       setBudgets([]);
       setCategories(defaultCategories);
+      setGoals([]);
       previousUserIdRef.current = currentUserId;
     }
 
@@ -106,6 +118,7 @@ export function useFinanceData() {
       setAccounts([]);
       setBudgets([]);
       setCategories(defaultCategories);
+      setGoals([]);
     }
   }, [isAuthenticated, user, loadUserData]);
 
@@ -274,6 +287,63 @@ export function useFinanceData() {
     []
   );
 
+  // Metas Financeiras CRUD
+  const addGoal = useCallback(
+    async (goal: Omit<Goal, "id">) => {
+      const tempId = crypto.randomUUID();
+      const optimisticGoal: Goal = { ...goal, id: tempId };
+      setGoals((prev) => {
+        const next = [...prev, optimisticGoal];
+        localStorage.setItem(getStorageKey("goals"), JSON.stringify(next));
+        return next;
+      });
+
+      try {
+        const created = await api.createGoal(goal);
+        setGoals((prev) => {
+          const next = prev.map((g) => (g.id === tempId ? created : g));
+          localStorage.setItem(getStorageKey("goals"), JSON.stringify(next));
+          return next;
+        });
+      } catch (err) {
+        console.error("Falha ao criar meta financeira na API:", err);
+      }
+    },
+    [getStorageKey]
+  );
+
+  const updateGoal = useCallback(
+    async (id: string, data: Partial<Goal>) => {
+      setGoals((prev) => {
+        const next = prev.map((g) => (g.id === id ? { ...g, ...data } : g));
+        localStorage.setItem(getStorageKey("goals"), JSON.stringify(next));
+        return next;
+      });
+      try {
+        await api.updateGoal(id, data);
+      } catch (err) {
+        console.error("Falha ao atualizar meta financeira na API:", err);
+      }
+    },
+    [getStorageKey]
+  );
+
+  const deleteGoal = useCallback(
+    async (id: string) => {
+      setGoals((prev) => {
+        const next = prev.filter((g) => g.id !== id);
+        localStorage.setItem(getStorageKey("goals"), JSON.stringify(next));
+        return next;
+      });
+      try {
+        await api.deleteGoal(id);
+      } catch (err) {
+        console.error("Falha ao excluir meta financeira na API:", err);
+      }
+    },
+    [getStorageKey]
+  );
+
   // Filtro por mês
   const filteredTransactions = transactions.filter((t) => t.date.startsWith(selectedMonth));
 
@@ -304,6 +374,7 @@ export function useFinanceData() {
     accounts,
     budgets: budgetsWithSpent,
     categories,
+    goals,
     totalIncome,
     totalExpenses,
     balance,
@@ -320,6 +391,9 @@ export function useFinanceData() {
     deleteBudget,
     addCategory,
     deleteCategory,
+    addGoal,
+    updateGoal,
+    deleteGoal,
   };
 }
 

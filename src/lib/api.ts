@@ -1,4 +1,4 @@
-import { Account, Budget, Transaction, Category } from "./mock-data";
+import { Account, Budget, Transaction, Category, Goal } from "./mock-data";
 
 const rawUrl = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:3333" : "https://appfinanceiro-api.onrender.com");
 const API_BASE_URL = rawUrl.endsWith("/api") ? rawUrl : `${rawUrl}/api`;
@@ -184,5 +184,42 @@ export const api = {
       headers: { ...getAuthHeader() },
     });
     if (!res.ok) throw new Error("Erro ao remover categoria");
+  },
+
+  // Goals
+  async getGoals(): Promise<Goal[]> {
+    const res = await fetch(`${API_BASE_URL}/goals`, {
+      headers: { ...getAuthHeader() },
+    });
+    if (!res.ok) throw new Error("Erro ao carregar metas financeiras");
+    return res.json();
+  },
+
+  async createGoal(g: Omit<Goal, "id">): Promise<Goal> {
+    const res = await fetch(`${API_BASE_URL}/goals`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...getAuthHeader() },
+      body: JSON.stringify(g),
+    });
+    if (!res.ok) throw new Error("Erro ao salvar meta financeira");
+    return res.json();
+  },
+
+  async updateGoal(id: string, g: Partial<Goal>): Promise<Goal> {
+    const res = await fetch(`${API_BASE_URL}/goals/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...getAuthHeader() },
+      body: JSON.stringify(g),
+    });
+    if (!res.ok) throw new Error("Erro ao atualizar meta financeira");
+    return res.json();
+  },
+
+  async deleteGoal(id: string): Promise<void> {
+    const res = await fetch(`${API_BASE_URL}/goals/${id}`, {
+      method: "DELETE",
+      headers: { ...getAuthHeader() },
+    });
+    if (!res.ok) throw new Error("Erro ao remover meta financeira");
   },
 };

@@ -7,6 +7,7 @@ import transactionsRoutes from "./routes/transactions.routes";
 import accountsRoutes from "./routes/accounts.routes";
 import budgetsRoutes from "./routes/budgets.routes";
 import categoriesRoutes from "./routes/categories.routes";
+import goalsRoutes from "./routes/goals.routes";
 
 dotenv.config();
 
@@ -31,6 +32,7 @@ app.use("/api/transactions", transactionsRoutes);
 app.use("/api/accounts", accountsRoutes);
 app.use("/api/budgets", budgetsRoutes);
 app.use("/api/categories", categoriesRoutes);
+app.use("/api/goals", goalsRoutes);
 
 app.listen(PORT, () => {
   console.log(`🚀 Servidor backend rodando com sucesso em http://localhost:${PORT}`);

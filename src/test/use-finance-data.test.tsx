@@ -1,0 +1,217 @@
+import { renderHook, act } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { useFinanceData } from "@/hooks/use-finance-data";
+import { api } from "@/lib/api";
+import React from "react";
+
+// Mock do módulo api
+vi.mock("@/lib/api", () => ({
+  api: {
+    createTransaction: vi.fn(),
+    updateTransaction: vi.fn(),
+    deleteTransaction: vi.fn(),
+    getTransactions: vi.fn(),
+    getAccounts: vi.fn(),
+    createAccount: vi.fn(),
+    updateAccount: vi.fn(),
+    deleteAccount: vi.fn(),
+    getBudgets: vi.fn(),
+    createBudget: vi.fn(),
+    updateBudget: vi.fn(),
+    deleteBudget: vi.fn(),
+    getCategories: vi.fn(),
+    createCategory: vi.fn(),
+    deleteCategory: vi.fn(),
+  },
+}));
+
+// Mock do AuthContext
+vi.mock("@/contexts/AuthContext", () => ({
+  useAuth: vi.fn(),
+}));
+
+import { useAuth } from "@/contexts/AuthContext";
+
+const mockUser = { id: "user123", name: "User", email: "user@example.com" };
+
+// Helper para renderizar o hook
+const renderUseFinanceData = () => {
+  return renderHook(() => useFinanceData());
+};
+
+describe("useFinanceData hook", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (useAuth as any).mockReturnValue({
+      user: mockUser,
+      isAuthenticated: true,
+    });
+    (api.getTransactions as any).mockResolvedValue([]);
+    (api.getAccounts as any).mockResolvedValue([]);
+    (api.getBudgets as any).mockResolvedValue([]);
+    (api.getCategories as any).mockResolvedValue([]);
+  });
+
+  it("should send recurrenceType, installmentTotal and isPaid to API and update state with returned installments", async () => {
+    // Preparar os mocks da API
+    const mockTxToCreate = {
+      description: "Compra Parcelada",
+      amount: 300,
+      type: "expense" as const,
+      category: "Compras",
+      date: "2023-10-01",
+      accountId: "acc1",
+      paymentMethod: "credit_card",
+      account: "acc1",
+      isPaid: true,
+      recurrenceType: "INSTALLMENT" as const,
+      installmentTotal: 3,
+    };
+
+    // O backend retorna as parcelas
+    const mockReturnedInstallments = [
+      { id: "tx1", ...mockTxToCreate, amount: 100, installmentCurrent: 1 },
+      { id: "tx2", ...mockTxToCreate, amount: 100, installmentCurrent: 2, date: "2023-11-01" },
+      { id: "tx3", ...mockTxToCreate, amount: 100, installmentCurrent: 3, date: "2023-12-01" },
+    ];
+
+    (api.getTransactions as any).mockResolvedValueOnce([]);
+    (api.getAccounts as any).mockResolvedValueOnce([]);
+    (api.getBudgets as any).mockResolvedValueOnce([]);
+    (api.getCategories as any).mockResolvedValueOnce([]);
+    
+    const { result } = renderUseFinanceData();
+
+    // Aguardar carregamento inicial
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // Simula API getTransactions retornando as parcelas após criação
+    (api.getTransactions as any).mockResolvedValueOnce(mockReturnedInstallments);
+    (api.getAccounts as any).mockResolvedValueOnce([]);
+
+    await act(async () => {
+      await result.current.addTransaction(mockTxToCreate);
+    });
+
+    expect(api.createTransaction).toHaveBeenCalledWith(mockTxToCreate);
+    expect(api.createTransaction).toHaveBeenCalledTimes(1);
+
+    // O estado de allTransactions deve ser atualizado com as parcelas retornadas
+    expect(result.current.allTransactions).toHaveLength(3);
+    expect(result.current.allTransactions).toEqual(mockReturnedInstallments);
+  });
+
+  it("should handle updateTransaction and deleteTransaction", async () => {
+    const { result } = renderUseFinanceData();
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    (api.updateTransaction as any).mockResolvedValueOnce({});
+    (api.getAccounts as any).mockResolvedValueOnce([]);
+
+    await act(async () => {
+      await result.current.updateTransaction("tx1", { amount: 500 });
+    });
+    expect(api.updateTransaction).toHaveBeenCalledWith("tx1", { amount: 500 });
+
+    (api.deleteTransaction as any).mockResolvedValueOnce({});
+    (api.getAccounts as any).mockResolvedValueOnce([]);
+    
+    await act(async () => {
+      await result.current.deleteTransaction("tx1");
+    });
+    expect(api.deleteTransaction).toHaveBeenCalledWith("tx1", undefined);
+  });
+
+  it("should handle deleteTransaction with deleteAllFuture", async () => {
+    const { result } = renderUseFinanceData();
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    (api.deleteTransaction as any).mockResolvedValueOnce({});
+    (api.getTransactions as any).mockResolvedValueOnce([]);
+    (api.getAccounts as any).mockResolvedValueOnce([]);
+    
+    await act(async () => {
+      await result.current.deleteTransaction("tx1", true);
+    });
+    expect(api.deleteTransaction).toHaveBeenCalledWith("tx1", true);
+    expect(api.getTransactions).toHaveBeenCalled();
+  });
+
+  it("should handle account CRUD", async () => {
+    const { result } = renderUseFinanceData();
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const newAcc = { name: "Bank", type: "checking" as const, balance: 1000, color: "#000" };
+    (api.createAccount as any).mockResolvedValueOnce({ ...newAcc, id: "acc1" });
+    await act(async () => {
+      await result.current.addAccount(newAcc);
+    });
+    expect(api.createAccount).toHaveBeenCalledWith(newAcc);
+
+    (api.updateAccount as any).mockResolvedValueOnce({});
+    await act(async () => {
+      await result.current.updateAccount("acc1", { balance: 2000 });
+    });
+    expect(api.updateAccount).toHaveBeenCalledWith("acc1", { balance: 2000 });
+
+    (api.deleteAccount as any).mockResolvedValueOnce({});
+    await act(async () => {
+      await result.current.deleteAccount("acc1");
+    });
+    expect(api.deleteAccount).toHaveBeenCalledWith("acc1");
+  });
+
+  it("should handle budget CRUD", async () => {
+    const { result } = renderUseFinanceData();
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const newBudget = { category: "Food", amount: 500, color: "#f00" };
+    (api.createBudget as any).mockResolvedValueOnce({ ...newBudget, id: "b1", spent: 0 });
+    await act(async () => {
+      await result.current.addBudget(newBudget);
+    });
+    expect(api.createBudget).toHaveBeenCalledWith(newBudget);
+
+    (api.updateBudget as any).mockResolvedValueOnce({});
+    await act(async () => {
+      await result.current.updateBudget("b1", { amount: 600 });
+    });
+    expect(api.updateBudget).toHaveBeenCalledWith("b1", { amount: 600 });
+
+    (api.deleteBudget as any).mockResolvedValueOnce({});
+    await act(async () => {
+      await result.current.deleteBudget("b1");
+    });
+    expect(api.deleteBudget).toHaveBeenCalledWith("b1");
+  });
+
+  it("should handle category CRUD", async () => {
+    const { result } = renderUseFinanceData();
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const newCat = { name: "Games", color: "#0f0", type: "expense" as const };
+    (api.createCategory as any).mockResolvedValueOnce({ ...newCat, id: "c1" });
+    await act(async () => {
+      await result.current.addCategory(newCat);
+    });
+    expect(api.createCategory).toHaveBeenCalledWith(newCat);
+
+    (api.deleteCategory as any).mockResolvedValueOnce({});
+    await act(async () => {
+      await result.current.deleteCategory("c1");
+    });
+    expect(api.deleteCategory).toHaveBeenCalledWith("c1");
+  });
+});

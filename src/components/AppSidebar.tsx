@@ -4,6 +4,7 @@ import {
   ArrowLeftRight,
   Wallet,
   Target,
+  PiggyBank,
   BarChart3,
   Tags,
   Settings,
@@ -17,6 +18,7 @@ const navItems = [
   { to: "/transactions", icon: ArrowLeftRight, label: "Transações" },
   { to: "/accounts", icon: Wallet, label: "Contas" },
   { to: "/budgets", icon: Target, label: "Orçamentos" },
+  { to: "/goals", icon: PiggyBank, label: "Metas" },
   { to: "/reports", icon: BarChart3, label: "Relatórios" },
   { to: "/categories", icon: Tags, label: "Categorias" },
 ];
