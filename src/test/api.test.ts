@@ -149,9 +149,17 @@ describe("API Client", () => {
     });
     
     it("should handle Transactions create and update", async () => {
-      await api.createTransaction({ amount: 10, type: "income", date: "2023", category: "Cat" });
+      await api.createTransaction({ amount: 10, type: "income", date: "2023", category: "Cat" } as any);
       await api.updateTransaction("1", { amount: 20 });
       expect(global.fetch).toHaveBeenCalledTimes(2);
+    });
+
+    it("should handle Goals", async () => {
+      await api.getGoals();
+      await api.createGoal({ name: "Reserva", targetAmount: 5000, currentAmount: 1000, icon: "🎯", color: "#000" });
+      await api.updateGoal("1", { currentAmount: 1500 });
+      await api.deleteGoal("1");
+      expect(global.fetch).toHaveBeenCalledTimes(4);
     });
   });
   
@@ -182,6 +190,11 @@ describe("API Client", () => {
       await expect(api.getCategories()).rejects.toThrow("Erro ao carregar categorias");
       await expect(api.createCategory({} as any)).rejects.toThrow("Erro ao salvar categoria");
       await expect(api.deleteCategory("1")).rejects.toThrow("Erro ao remover categoria");
+
+      await expect(api.getGoals()).rejects.toThrow("Erro ao carregar metas financeiras");
+      await expect(api.createGoal({} as any)).rejects.toThrow("Erro ao salvar meta financeira");
+      await expect(api.updateGoal("1", {})).rejects.toThrow("Erro ao atualizar meta financeira");
+      await expect(api.deleteGoal("1")).rejects.toThrow("Erro ao remover meta financeira");
       
       await expect(api.register("", "", "")).rejects.toThrow("Erro no cadastro");
     });
