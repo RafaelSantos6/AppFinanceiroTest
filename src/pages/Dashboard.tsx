@@ -27,7 +27,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 export default function Dashboard() {
-  const { transactions, allTransactions, budgets, categories, totalIncome, totalExpenses, balance, selectedMonth } = useFinance();
+  const { transactions, allTransactions, budgets, categories, goals = [], totalIncome, totalExpenses, balance, selectedMonth } = useFinance();
   const activeCategories = categories?.length ? categories : defaultCategories;
   const dynamicTrend = calculateMonthlyTrend(allTransactions ?? transactions, selectedMonth);
 
@@ -131,6 +131,40 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {goals.length > 0 && (
+        <div className="bg-card rounded-xl shadow-card p-5">
+          <h2 className="text-heading mb-4">Metas Financeiras</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {goals.slice(0, 3).map((goal) => {
+              const pct = goal.targetAmount > 0 ? Math.min((goal.currentAmount / goal.targetAmount) * 100, 100) : 0;
+              return (
+                <div key={goal.id} className="p-3.5 rounded-lg border border-border/60 bg-accent/20 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium flex items-center gap-2 truncate">
+                      <span>{goal.icon}</span>
+                      <span className="truncate">{goal.name}</span>
+                    </span>
+                    <span className="text-xs font-mono tabular-nums text-muted-foreground">
+                      {Math.round(pct)}%
+                    </span>
+                  </div>
+                  <div className="h-2 bg-accent rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{ width: `${pct}%`, backgroundColor: goal.color }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-xs font-mono tabular-nums text-muted-foreground">
+                    <span>{formatCurrency(goal.currentAmount)}</span>
+                    <span>{formatCurrency(goal.targetAmount)}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="bg-card rounded-xl shadow-card">
         <div className="p-5 border-b border-border">

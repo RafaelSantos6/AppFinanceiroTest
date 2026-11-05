@@ -4,6 +4,7 @@ import {
   ArrowLeftRight,
   Wallet,
   Target,
+  PiggyBank,
   BarChart3,
 } from "lucide-react";
 
@@ -12,6 +13,7 @@ const navItems = [
   { to: "/transactions", icon: ArrowLeftRight, label: "Transações" },
   { to: "/accounts", icon: Wallet, label: "Contas" },
   { to: "/budgets", icon: Target, label: "Orçam." },
+  { to: "/goals", icon: PiggyBank, label: "Metas" },
   { to: "/reports", icon: BarChart3, label: "Relat." },
 ];
 
