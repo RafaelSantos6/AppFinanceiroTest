@@ -29,12 +29,14 @@ dist-ssr
 .env.production
 .env.local
 .env.*.local
-server/.env
-server/.env.local
+back/.env
+back/.env.local
+front/.env
+front/.env.local
 
 # Banco de dados SQLite / Prisma
-server/prisma/*.db
-server/prisma/*.db-journal
+back/prisma/*.db
+back/prisma/*.db-journal
 *.sqlite
 *.sqlite3
 
@@ -48,4 +50,5 @@ coverage
 .vite
 
 coverage/
-server/coverage/
+back/coverage/
+front/coverage/
