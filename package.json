@@ -2,6 +2,7 @@
   "name": "app-financeiro-test",
   "private": true,
   "scripts": {
+    "postinstall": "npm --prefix front install --legacy-peer-deps",
     "dev": "npx concurrently \"npm run dev:front\" \"npm run dev:back\"",
     "dev:all": "npx concurrently \"npm run dev:front\" \"npm run dev:back\"",
     "dev:front": "npm run --prefix front dev",
@@ -11,7 +12,8 @@
     "server:studio": "npm run --prefix back prisma:studio",
     "setup:back": "npm run --prefix back setup",
     "studio:back": "npm run --prefix back prisma:studio",
-    "build": "npm run --prefix front build && npm run --prefix back build",
+    "build": "npm run --prefix front build && rm -rf dist && cp -r front/dist dist",
+    "build:all": "npm run --prefix front build && npm run --prefix back build",
     "build:front": "npm run --prefix front build",
     "build:back": "npm run --prefix back build",
     "build:dev": "npm run --prefix front build:dev",
