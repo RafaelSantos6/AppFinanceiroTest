@@ -4,9 +4,15 @@ import { prisma } from "../prisma";
 import { z } from "zod";
 
 const accountSchema = z.object({
-  name: z.string().min(1, "Nome da conta é obrigatório"),
+  name: z.string().trim().min(1, "Nome da conta é obrigatório"),
   type: z.enum(["bank", "cash", "credit", "savings"]),
   balance: z.number().default(0),
+});
+
+const updateAccountSchema = z.object({
+  name: z.string().trim().min(1, "Nome da conta é obrigatório").optional(),
+  type: z.enum(["bank", "cash", "credit", "savings"]).optional(),
+  balance: z.number().optional(),
 });
 
 export async function getAccounts(req: AuthenticatedRequest, res: Response): Promise<void> {
@@ -60,9 +66,15 @@ export async function updateAccount(req: AuthenticatedRequest, res: Response): P
       return;
     }
 
+    const parsed = updateAccountSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: parsed.error.errors[0]?.message || "Dados inválidos." });
+      return;
+    }
+
     const updated = await prisma.account.update({
       where: { id },
-      data: req.body,
+      data: parsed.data,
     });
 
     res.json(updated);

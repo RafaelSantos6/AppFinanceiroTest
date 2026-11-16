@@ -79,13 +79,33 @@ describe("Goals Controller", () => {
       expect(res.status).toHaveBeenCalledWith(404);
     });
 
-    it("should update goal", async () => {
-      const req = { userId: "u1", params: { id: "g1" }, body: { currentAmount: 1500 } } as unknown as AuthenticatedRequest;
+    it("should update goal and strip unauthorized fields (mass assignment protection)", async () => {
+      const req = {
+        userId: "u1",
+        params: { id: "g1" },
+        body: { currentAmount: 1500, userId: "hacker-id", id: "forged-id" },
+      } as unknown as AuthenticatedRequest;
       const res = mockRes();
       prismaMock.goal.findFirst.mockResolvedValue({ id: "g1" });
       prismaMock.goal.update.mockResolvedValue({ id: "g1", currentAmount: 1500 });
       await updateGoal(req, res);
+      expect(prismaMock.goal.update).toHaveBeenCalledWith({
+        where: { id: "g1" },
+        data: { currentAmount: 1500 },
+      });
       expect(res.json).toHaveBeenCalledWith({ id: "g1", currentAmount: 1500 });
+    });
+
+    it("should return 400 on invalid update payload", async () => {
+      const req = {
+        userId: "u1",
+        params: { id: "g1" },
+        body: { currentAmount: -10 },
+      } as unknown as AuthenticatedRequest;
+      const res = mockRes();
+      prismaMock.goal.findFirst.mockResolvedValue({ id: "g1" });
+      await updateGoal(req, res);
+      expect(res.status).toHaveBeenCalledWith(400);
     });
 
     it("should handle error", async () => {
