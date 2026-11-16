@@ -70,13 +70,33 @@ describe("Budgets Controller", () => {
       expect(res.status).toHaveBeenCalledWith(404);
     });
 
-    it("should update budget", async () => {
-      const req = { userId: "u1", params: { id: "b1" }, body: { limit: 200 } } as unknown as AuthenticatedRequest;
+    it("should update budget and strip unauthorized fields (mass assignment protection)", async () => {
+      const req = {
+        userId: "u1",
+        params: { id: "b1" },
+        body: { limit: 200, userId: "hacker-id", id: "forged-id" },
+      } as unknown as AuthenticatedRequest;
       const res = mockRes();
       prismaMock.budget.findFirst.mockResolvedValue({ id: "b1" });
       prismaMock.budget.update.mockResolvedValue({ id: "b1", limit: 200 });
       await updateBudget(req, res);
+      expect(prismaMock.budget.update).toHaveBeenCalledWith({
+        where: { id: "b1" },
+        data: { limit: 200 },
+      });
       expect(res.json).toHaveBeenCalledWith({ id: "b1", limit: 200 });
+    });
+
+    it("should return 400 on invalid update payload", async () => {
+      const req = {
+        userId: "u1",
+        params: { id: "b1" },
+        body: { limit: -50 },
+      } as unknown as AuthenticatedRequest;
+      const res = mockRes();
+      prismaMock.budget.findFirst.mockResolvedValue({ id: "b1" });
+      await updateBudget(req, res);
+      expect(res.status).toHaveBeenCalledWith(400);
     });
 
     it("should handle error", async () => {

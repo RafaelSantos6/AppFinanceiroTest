@@ -4,12 +4,21 @@ import { prisma } from "../prisma";
 import { z } from "zod";
 
 const goalSchema = z.object({
-  name: z.string().min(1, "Nome da meta é obrigatório"),
+  name: z.string().trim().min(1, "Nome da meta é obrigatório"),
   targetAmount: z.number().positive("Valor da meta deve ser maior que zero"),
   currentAmount: z.number().min(0, "Valor atual não pode ser negativo").default(0),
   deadline: z.string().optional().nullable(),
   icon: z.string().default("🎯"),
   color: z.string().default("hsl(221, 83%, 53%)"),
+});
+
+const updateGoalSchema = z.object({
+  name: z.string().trim().min(1, "Nome da meta é obrigatório").optional(),
+  targetAmount: z.number().positive("Valor da meta deve ser maior que zero").optional(),
+  currentAmount: z.number().min(0, "Valor atual não pode ser negativo").optional(),
+  deadline: z.string().optional().nullable(),
+  icon: z.string().optional(),
+  color: z.string().optional(),
 });
 
 export async function getGoals(req: AuthenticatedRequest, res: Response): Promise<void> {
@@ -63,9 +72,15 @@ export async function updateGoal(req: AuthenticatedRequest, res: Response): Prom
       return;
     }
 
+    const parsed = updateGoalSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: parsed.error.errors[0]?.message || "Dados inválidos." });
+      return;
+    }
+
     const updated = await prisma.goal.update({
       where: { id },
-      data: req.body,
+      data: parsed.data,
     });
 
     res.json(updated);

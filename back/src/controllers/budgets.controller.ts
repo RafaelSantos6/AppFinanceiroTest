@@ -4,9 +4,15 @@ import { prisma } from "../prisma";
 import { z } from "zod";
 
 const budgetSchema = z.object({
-  category: z.string().min(1, "Categoria é obrigatória"),
+  category: z.string().trim().min(1, "Categoria é obrigatória"),
   limit: z.number().positive("Limite deve ser maior que zero"),
   spent: z.number().default(0),
+});
+
+const updateBudgetSchema = z.object({
+  category: z.string().trim().min(1, "Categoria é obrigatória").optional(),
+  limit: z.number().positive("Limite deve ser maior que zero").optional(),
+  spent: z.number().min(0, "Gasto não pode ser negativo").optional(),
 });
 
 export async function getBudgets(req: AuthenticatedRequest, res: Response): Promise<void> {
@@ -60,9 +66,15 @@ export async function updateBudget(req: AuthenticatedRequest, res: Response): Pr
       return;
     }
 
+    const parsed = updateBudgetSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: parsed.error.errors[0]?.message || "Dados inválidos." });
+      return;
+    }
+
     const updated = await prisma.budget.update({
       where: { id },
-      data: req.body,
+      data: parsed.data,
     });
 
     res.json(updated);

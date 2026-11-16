@@ -14,8 +14,28 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3333;
 
-app.use(cors());
-app.use(express.json());
+// Oculta o cabeçalho X-Powered-By para evitar fingerprinting da stack
+app.disable("x-powered-by");
+
+// Headers de segurança HTTP (mitigação de XSS, Clickjacking e MIME-Sniffing)
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Content-Security-Policy", "default-src 'self'; frame-ancestors 'none'");
+  next();
+});
+
+// Configuração de CORS e limite de tamanho do payload JSON
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN || "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+app.use(express.json({ limit: "50kb" }));
 
 // Rota de verificação do status da API
 app.get("/api/health", (_req, res) => {

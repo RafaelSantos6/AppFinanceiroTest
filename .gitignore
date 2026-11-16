@@ -7,48 +7,66 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Node / Dependências
-node_modules
-dist
-dist-ssr
+# Node / Dependências e Builds
+node_modules/
+front/node_modules/
+back/node_modules/
+dist/
+front/dist/
+back/dist/
+dist-ssr/
 *.local
 
-# Editor / IDE
+# Editor / IDE / SO
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 
-# Variáveis de ambiente e segredos
+# Variáveis de ambiente e segredos (NUNCA versionar)
 .env
-.env.production
-.env.local
-.env.*.local
+.env.*
+!.env.example
 back/.env
-back/.env.local
+back/.env.*
+!back/.env.example
 front/.env
-front/.env.local
+front/.env.*
+!front/.env.example
+
+# Chaves criptográficas e certificados
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
 
 # Banco de dados SQLite / Prisma
 back/prisma/*.db
 back/prisma/*.db-journal
+back/prisma/*.db-shm
+back/prisma/*.db-wal
+*.db
+*.db-journal
 *.sqlite
 *.sqlite3
 
-# Testes e cobertura
-coverage
-.nyc_output
-
-# Build e cache
-.eslintcache
-.parcel-cache
-.vite
-
+# Testes, cobertura e relatórios
 coverage/
 back/coverage/
 front/coverage/
+.nyc_output/
+playwright-report/
+test-results/
+
+# Cache de ferramentas
+.eslintcache
+.parcel-cache
+.vite/
+front/.vite/
