@@ -3,9 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { prisma } from "../prisma";
-import { AuthenticatedRequest } from "../middlewares/auth";
-
-const JWT_SECRET = process.env.JWT_SECRET || "finance_system_super_secret_jwt_key_2026_bolsocerto";
+import { AuthenticatedRequest, getJwtSecret } from "../middlewares/auth";
 
 const registerSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
@@ -87,7 +85,7 @@ export async function register(req: Request, res: Response): Promise<void> {
     });
 
     // Gera token JWT válido por 7 dias
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign({ userId: user.id }, getJwtSecret(), { expiresIn: "7d" });
 
     res.status(201).json({
       user,
@@ -131,7 +129,7 @@ export async function login(req: Request, res: Response): Promise<void> {
     }
 
     // Gera token JWT
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign({ userId: user.id }, getJwtSecret(), { expiresIn: "7d" });
 
     res.json({
       user: {
