@@ -107,8 +107,8 @@ export function TransactionForm({ onSubmit, initial }: TransactionFormProps) {
       account,
       recurrenceType,
       isPaid,
-      receiptUrl: type === "expense" ? receiptUrl : null,
-      receiptName: type === "expense" ? receiptName : null,
+      receiptUrl,
+      receiptName,
     };
 
     if (recurrenceType === "INSTALLMENT" && installmentTotal) {
@@ -259,43 +259,41 @@ export function TransactionForm({ onSubmit, initial }: TransactionFormProps) {
         </div>
       </div>
 
-      {type === "expense" && (
-        <div className="space-y-1.5">
-          <Label htmlFor="receipt-upload" className="text-label flex items-center gap-1.5">
-            <Paperclip className="w-3.5 h-3.5" />
-            Cupom Fiscal (PDF ou Imagem)
-          </Label>
-          <Input
-            id="receipt-upload"
-            ref={fileInputRef}
-            type="file"
-            accept="application/pdf,image/jpeg,image/png,image/webp"
-            onChange={handleFileChange}
-            className="cursor-pointer text-xs file:mr-3 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-accent file:text-foreground hover:file:bg-accent/80"
-          />
-          {fileError && (
-            <p className="text-xs text-destructive">{fileError}</p>
-          )}
-          {receiptUrl && (
-            <div className="flex items-center justify-between gap-2 bg-accent/60 px-3 py-2 rounded-md text-xs">
-              <div className="flex items-center gap-2 min-w-0">
-                <FileText className="w-4 h-4 text-primary flex-shrink-0" />
-                <span className="truncate font-medium">
-                  {receiptName || "Cupom anexado"}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={handleRemoveReceipt}
-                className="text-muted-foreground hover:text-destructive transition-colors flex-shrink-0"
-                title="Remover cupom"
-              >
-                <X className="w-4 h-4" />
-              </button>
+      <div className="space-y-1.5">
+        <Label htmlFor="receipt-upload" className="text-label flex items-center gap-1.5">
+          <Paperclip className="w-3.5 h-3.5" />
+          Cupom Fiscal / Comprovante (PDF ou Imagem)
+        </Label>
+        <Input
+          id="receipt-upload"
+          ref={fileInputRef}
+          type="file"
+          accept="application/pdf,image/jpeg,image/png,image/webp"
+          onChange={handleFileChange}
+          className="cursor-pointer text-xs file:mr-3 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-accent file:text-foreground hover:file:bg-accent/80"
+        />
+        {fileError && (
+          <p className="text-xs text-destructive">{fileError}</p>
+        )}
+        {receiptUrl && (
+          <div className="flex items-center justify-between gap-2 bg-accent/60 px-3 py-2 rounded-md text-xs">
+            <div className="flex items-center gap-2 min-w-0">
+              <FileText className="w-4 h-4 text-primary flex-shrink-0" />
+              <span className="truncate font-medium">
+                {receiptName || "Comprovante anexado"}
+              </span>
             </div>
-          )}
-        </div>
-      )}
+            <button
+              type="button"
+              onClick={handleRemoveReceipt}
+              className="text-muted-foreground hover:text-destructive transition-colors flex-shrink-0"
+              title="Remover comprovante"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+      </div>
 
       <div className="flex items-center space-x-2 pt-2">
         <Switch id="is-paid" checked={isPaid} onCheckedChange={setIsPaid} />

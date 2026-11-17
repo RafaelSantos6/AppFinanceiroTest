@@ -58,15 +58,11 @@ export async function createTransaction(req: AuthenticatedRequest, res: Response
 
     const receiptUrl = uploadedFile
       ? `/uploads/${uploadedFile.filename}`
-      : data.type === "expense"
-      ? (data.receiptUrl ?? null)
-      : null;
+      : (data.receiptUrl ?? null);
 
     const receiptName = uploadedFile
       ? uploadedFile.originalname
-      : data.type === "expense"
-      ? (data.receiptName ?? null)
-      : null;
+      : (data.receiptName ?? null);
 
     const result = await prisma.$transaction(async (tx) => {
       const transactionsToCreate = generateTransactions(data, userId);
@@ -132,9 +128,6 @@ export async function updateTransaction(req: AuthenticatedRequest, res: Response
     if (uploadedFile) {
       data.receiptUrl = `/uploads/${uploadedFile.filename}`;
       data.receiptName = uploadedFile.originalname;
-    } else if (data.type === "income") {
-      data.receiptUrl = null;
-      data.receiptName = null;
     }
 
     const result = await prisma.$transaction(async (tx) => {
