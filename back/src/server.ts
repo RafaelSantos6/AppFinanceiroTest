@@ -8,6 +8,7 @@ import accountsRoutes from "./routes/accounts.routes";
 import budgetsRoutes from "./routes/budgets.routes";
 import categoriesRoutes from "./routes/categories.routes";
 import goalsRoutes from "./routes/goals.routes";
+import path from 'path';
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ const PORT = process.env.PORT || 3333;
 
 // Oculta o cabeçalho X-Powered-By para evitar fingerprinting da stack
 app.disable("x-powered-by");
+
 
 // Headers de segurança HTTP (mitigação de XSS, Clickjacking e MIME-Sniffing)
 app.use((_req, res, next) => {
@@ -59,3 +61,5 @@ app.listen(PORT, () => {
   console.log(`📊 Banco de dados conectado via Prisma.`);
   console.log(`🔐 Rotas de autenticação disponíveis em http://localhost:${PORT}/api/auth`);
 });
+
+app.use('/uploads', express.static(path.resolve(__dirname, '..', 'uploads')));

@@ -44,6 +44,8 @@ model Transaction {
   date          String   // YYYY-MM-DD
   paymentMethod String
   account       String
+  receiptUrl  String?  // Caminho/URL do cupom fiscal anexado
+  receiptName String?  // Nome original do arquivo
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

@@ -7,7 +7,10 @@ import crypto from "crypto";
 import { generateTransactions } from "../utils/financial";
 
 const transactionSchema = z.object({
-  amount: z.number(),
+  amount: z.preprocess(
+    (val) => (typeof val === "string" ? parseFloat(val) : val),
+    z.number()
+  ),
   type: z.enum(["income", "expense"]),
   category: z.string().min(1),
   description: z.string().min(1),
@@ -15,8 +18,16 @@ const transactionSchema = z.object({
   paymentMethod: z.string().min(1),
   account: z.string().min(1),
   recurrenceType: z.enum(["NONE", "FIXED", "INSTALLMENT"]).optional().default("NONE"),
-  installmentTotal: z.number().int().positive().optional(),
-  isPaid: z.boolean().optional().default(true),
+  installmentTotal: z.preprocess(
+    (val) => (val === "" || val === undefined || val === null ? undefined : Number(val)),
+    z.number().int().positive().optional()
+  ),
+  isPaid: z.preprocess(
+    (val) => (val === "true" ? true : val === "false" ? false : val),
+    z.boolean().optional().default(true)
+  ),
+  receiptUrl: z.string().nullable().optional(),
+  receiptName: z.string().nullable().optional(),
 });
 
 export async function getTransactions(req: AuthenticatedRequest, res: Response): Promise<void> {
@@ -43,13 +54,32 @@ export async function createTransaction(req: AuthenticatedRequest, res: Response
     }
 
     const data = parsed.data;
+    const uploadedFile = (req as AuthenticatedRequest & { file?: { filename: string; originalname: string } }).file;
+
+    const receiptUrl = uploadedFile
+      ? `/uploads/${uploadedFile.filename}`
+      : data.type === "expense"
+      ? (data.receiptUrl ?? null)
+      : null;
+
+    const receiptName = uploadedFile
+      ? uploadedFile.originalname
+      : data.type === "expense"
+      ? (data.receiptName ?? null)
+      : null;
 
     const result = await prisma.$transaction(async (tx) => {
       const transactionsToCreate = generateTransactions(data, userId);
 
       const createdTransactions = [];
       for (const tData of transactionsToCreate) {
-        const t = await tx.transaction.create({ data: tData });
+        const t = await tx.transaction.create({
+          data: {
+            ...tData,
+            ...(receiptUrl !== null ? { receiptUrl } : {}),
+            ...(receiptName !== null ? { receiptName } : {}),
+          },
+        });
         createdTransactions.push(t);
 
         if (t.isPaid) {
@@ -97,6 +127,15 @@ export async function updateTransaction(req: AuthenticatedRequest, res: Response
       return;
     }
     const data = parsed.data;
+    const uploadedFile = (req as AuthenticatedRequest & { file?: { filename: string; originalname: string } }).file;
+
+    if (uploadedFile) {
+      data.receiptUrl = `/uploads/${uploadedFile.filename}`;
+      data.receiptName = uploadedFile.originalname;
+    } else if (data.type === "income") {
+      data.receiptUrl = null;
+      data.receiptName = null;
+    }
 
     const result = await prisma.$transaction(async (tx) => {
       // Reverter saldo da conta antiga (apenas se estava pago)

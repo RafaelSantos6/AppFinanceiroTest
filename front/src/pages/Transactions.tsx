@@ -3,7 +3,7 @@ import { useFinance } from "@/contexts/FinanceContext";
 import { formatCurrency, Transaction } from "@/lib/mock-data";
 import { TransactionForm } from "@/components/TransactionForm";
 import { MonthYearSelector } from "@/components/MonthYearSelector";
-import { Search, Filter, Pencil, Trash2, X, Plus, Repeat } from "lucide-react";
+import { Search, Filter, Pencil, Trash2, X, Plus, Repeat, Paperclip, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +26,21 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+type TransactionWithReceipt = Transaction & {
+  receiptUrl?: string | null;
+  receiptName?: string | null;
+};
+
+const rawApiUrl = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:3333" : "https://appfinanceiro-api.onrender.com");
+const SERVER_BASE_URL = rawApiUrl.replace(/\/api$/, "");
+
+function resolveReceiptHref(url: string): string {
+  if (url.startsWith("data:") || url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+  return `${SERVER_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+}
+
 export default function Transactions() {
   const { transactions, categories, deleteTransaction } = useFinance();
   const [search, setSearch] = useState("");
@@ -33,8 +48,9 @@ export default function Transactions() {
   const [adding, setAdding] = useState(false);
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [deletingTx, setDeletingTx] = useState<Transaction | null>(null);
+  const [viewingReceiptTx, setViewingReceiptTx] = useState<TransactionWithReceipt | null>(null);
 
-  const filtered = transactions
+  const filtered = (transactions as TransactionWithReceipt[])
     .filter((t) => {
       if (typeFilter !== "all" && t.type !== typeFilter) return false;
       if (search && !t.description.toLowerCase().includes(search.toLowerCase()) && !t.category.toLowerCase().includes(search.toLowerCase())) return false;
@@ -82,7 +98,7 @@ export default function Transactions() {
       </div>
 
       <div className="bg-card rounded-xl shadow-card overflow-hidden">
-        <div className="hidden md:grid grid-cols-[1fr_120px_100px_140px_120px_80px] gap-4 px-5 py-3 border-b border-border text-label">
+        <div className="hidden md:grid grid-cols-[1fr_120px_100px_140px_120px_96px] gap-4 px-5 py-3 border-b border-border text-label">
           <span>Descrição</span>
           <span>Categoria</span>
           <span>Data</span>
@@ -97,7 +113,7 @@ export default function Transactions() {
             return (
               <div
                 key={tx.id}
-                className="flex flex-col md:grid md:grid-cols-[1fr_120px_100px_140px_120px_80px] gap-1 md:gap-4 px-5 py-3.5 hover:bg-accent/50 transition-colors group"
+                className="flex flex-col md:grid md:grid-cols-[1fr_120px_100px_140px_120px_96px] gap-1 md:gap-4 px-5 py-3.5 hover:bg-accent/50 transition-colors group"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <span className="text-base">{cat?.icon ?? "📝"}</span>
@@ -112,6 +128,17 @@ export default function Transactions() {
                       <Repeat className="w-2.5 h-2.5" /> Fixa
                     </Badge>
                   )}
+                  {tx.receiptUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setViewingReceiptTx(tx)}
+                      className="inline-flex items-center gap-1 text-[11px] text-primary bg-primary/10 hover:bg-primary/20 px-1.5 py-0.5 rounded transition-colors flex-shrink-0"
+                      title={tx.receiptName || "Ver Cupom Fiscal"}
+                    >
+                      <Paperclip className="w-3 h-3" />
+                      <span className="hidden sm:inline">Cupom</span>
+                    </button>
+                  )}
                 </div>
                 <span className="text-sm text-muted-foreground hidden md:block truncate">{tx.category}</span>
                 <span className="text-sm text-muted-foreground hidden md:block">
@@ -122,6 +149,15 @@ export default function Transactions() {
                   {tx.type === "income" ? "+" : "-"}{formatCurrency(tx.amount)}
                 </span>
                 <div className="hidden md:flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {tx.receiptUrl && (
+                    <button
+                      onClick={() => setViewingReceiptTx(tx)}
+                      className="w-7 h-7 rounded-md bg-accent flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
+                      title="Visualizar Cupom Fiscal"
+                    >
+                      <Paperclip className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                   <button onClick={() => setEditingTx(tx)} className="w-7 h-7 rounded-md bg-accent flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
@@ -137,6 +173,15 @@ export default function Transactions() {
                     <span>{new Date(tx.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}</span>
                   </div>
                   <div className="flex items-center gap-1">
+                    {tx.receiptUrl && (
+                      <button
+                        onClick={() => setViewingReceiptTx(tx)}
+                        className="w-7 h-7 rounded-md bg-accent flex items-center justify-center text-primary"
+                        title="Visualizar Cupom Fiscal"
+                      >
+                        <Paperclip className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                     <button onClick={() => setEditingTx(tx)} className="w-7 h-7 rounded-md bg-accent flex items-center justify-center text-muted-foreground">
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
@@ -211,6 +256,71 @@ export default function Transactions() {
                 </button>
               </div>
               <TransactionForm initial={editingTx} onSubmit={() => setEditingTx(null)} />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Receipt Preview Modal */}
+      <AnimatePresence>
+        {viewingReceiptTx && viewingReceiptTx.receiptUrl && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-foreground/20 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setViewingReceiptTx(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-card rounded-xl shadow-card w-full max-w-2xl p-6 max-h-[90vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="min-w-0">
+                  <h2 className="text-heading truncate">{viewingReceiptTx.description}</h2>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {viewingReceiptTx.receiptName || "Cupom Fiscal"}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={resolveReceiptHref(viewingReceiptTx.receiptUrl)}
+                    download={viewingReceiptTx.receiptName || "cupom-fiscal"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs font-medium bg-accent hover:bg-accent/80 px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Baixar / Abrir
+                  </a>
+                  <button
+                    onClick={() => setViewingReceiptTx(null)}
+                    className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-auto bg-accent/40 rounded-lg flex items-center justify-center p-2 min-h-[300px]">
+                {viewingReceiptTx.receiptUrl.startsWith("data:application/pdf") ||
+                viewingReceiptTx.receiptUrl.toLowerCase().endsWith(".pdf") ? (
+                  <iframe
+                    src={resolveReceiptHref(viewingReceiptTx.receiptUrl)}
+                    title={viewingReceiptTx.receiptName || "Cupom PDF"}
+                    className="w-full h-[65vh] rounded border-0"
+                  />
+                ) : (
+                  <img
+                    src={resolveReceiptHref(viewingReceiptTx.receiptUrl)}
+                    alt={viewingReceiptTx.receiptName || "Cupom Fiscal"}
+                    className="max-w-full max-h-[65vh] object-contain rounded"
+                  />
+                )}
+              </div>
             </motion.div>
           </motion.div>
         )}
