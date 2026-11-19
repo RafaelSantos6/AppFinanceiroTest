@@ -1,6 +1,6 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 
 import authRoutes from "./routes/auth.routes";
 import transactionsRoutes from "./routes/transactions.routes";
@@ -8,8 +8,6 @@ import accountsRoutes from "./routes/accounts.routes";
 import budgetsRoutes from "./routes/budgets.routes";
 import categoriesRoutes from "./routes/categories.routes";
 import goalsRoutes from "./routes/goals.routes";
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3333;
@@ -41,7 +39,7 @@ app.use(express.json({ limit: "50kb" }));
 app.get("/api/health", (_req, res) => {
   res.json({
     status: "ok",
-    message: "Backend BolsoCerto API online com banco de dados SQLite",
+    message: "Backend BolsoCerto API online com banco de dados",
     timestamp: new Date().toISOString(),
   });
 });
