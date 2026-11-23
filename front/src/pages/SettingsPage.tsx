@@ -1,6 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut, User } from "lucide-react";
+import { LogOut } from "lucide-react";
+import { ParentalControlSection } from "@/components/ParentalControlSection";
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
@@ -9,7 +10,7 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-heading">Configurações</h1>
-        <p className="text-sm text-muted-foreground">Gerencie sua conta e preferências</p>
+        <p className="text-sm text-muted-foreground">Gerencie sua conta, dependentes e preferências</p>
       </div>
 
       <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
@@ -56,6 +57,9 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Módulo 3: Controle Parental integrado em Configurações */}
+      <ParentalControlSection />
     </div>
   );
 }

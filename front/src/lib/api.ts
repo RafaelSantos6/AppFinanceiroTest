@@ -1,5 +1,51 @@
 import { Account, Budget, Transaction, Category, Goal } from "./mock-data";
 
+export interface ChildAccountSummary {
+  id: string;
+  name: string;
+  email: string;
+  role: "CHILD";
+  parentId: string;
+  spendingLimit?: number | null;
+  createdAt?: string;
+  totalBalance: number;
+  totalExpenses: number;
+  totalIncome: number;
+  transactionCount: number;
+}
+
+export interface ChildOverview {
+  child: {
+    id: string;
+    name: string;
+    email: string;
+    role: "CHILD";
+    parentId: string;
+    spendingLimit?: number | null;
+    createdAt?: string;
+  };
+  totalBalance: number;
+  totalExpenses: number;
+  totalIncome: number;
+  accounts: Account[];
+  transactions: Transaction[];
+  goals: Goal[];
+  spendingByCategory: {
+    category: string;
+    amount: number;
+    icon: string;
+    color: string;
+  }[];
+}
+
+export interface CreateChildPayload {
+  name: string;
+  email: string;
+  password: string;
+  spendingLimit?: number | null;
+  initialBalance?: number;
+}
+
 const rawUrl = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:3333" : "https://appfinanceiro-api.onrender.com");
 const API_BASE_URL = rawUrl.endsWith("/api") ? rawUrl : `${rawUrl}/api`;
 
@@ -229,5 +275,55 @@ export const api = {
       headers: { ...getAuthHeader() },
     });
     if (!res.ok) throw new Error("Erro ao remover meta financeira");
+  },
+
+  // Parental Control (Controle Parental)
+  async getChildren(): Promise<ChildAccountSummary[]> {
+    const res = await fetch(`${API_BASE_URL}/parental/children`, {
+      headers: { ...getAuthHeader() },
+    });
+    if (!res.ok) throw new Error("Erro ao carregar contas de dependentes");
+    return res.json();
+  },
+
+  async createChildAccount(payload: CreateChildPayload): Promise<{ child: ChildAccountSummary; message: string }> {
+    const res = await fetch(`${API_BASE_URL}/parental/children`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...getAuthHeader() },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Erro ao criar conta da criança");
+    return data;
+  },
+
+  async getChildOverview(childId: string): Promise<ChildOverview> {
+    const res = await fetch(`${API_BASE_URL}/parental/children/${childId}/overview`, {
+      headers: { ...getAuthHeader() },
+    });
+    if (!res.ok) throw new Error("Erro ao carregar gastos da criança");
+    return res.json();
+  },
+
+  async updateChildAccount(
+    childId: string,
+    payload: { name?: string; spendingLimit?: number | null }
+  ): Promise<ChildAccountSummary> {
+    const res = await fetch(`${API_BASE_URL}/parental/children/${childId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...getAuthHeader() },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Erro ao atualizar conta da criança");
+    return data;
+  },
+
+  async deleteChildAccount(childId: string): Promise<void> {
+    const res = await fetch(`${API_BASE_URL}/parental/children/${childId}`, {
+      method: "DELETE",
+      headers: { ...getAuthHeader() },
+    });
+    if (!res.ok) throw new Error("Erro ao remover conta da criança");
   },
 };
