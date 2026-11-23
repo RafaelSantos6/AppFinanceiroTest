@@ -60,6 +60,7 @@ back/prisma/*.db-wal
 # Testes, cobertura e relatórios
 coverage/
 back/coverage/
+back/uploads/
 front/coverage/
 .nyc_output/
 playwright-report/

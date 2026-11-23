@@ -53,21 +53,29 @@ export const api = {
     return res.json();
   },
 
-  async createTransaction(tx: Omit<Transaction, "id">): Promise<Transaction> {
+  async createTransaction(tx: Omit<Transaction, "id"> | FormData): Promise<Transaction> {
+    const isFormData = typeof FormData !== "undefined" && tx instanceof FormData;
     const res = await fetch(`${API_BASE_URL}/transactions`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...getAuthHeader() },
-      body: JSON.stringify(tx),
+      headers: {
+        ...(!isFormData ? { "Content-Type": "application/json" } : {}),
+        ...getAuthHeader(),
+      },
+      body: isFormData ? tx : JSON.stringify(tx),
     });
     if (!res.ok) throw new Error("Erro ao salvar transação");
     return res.json();
   },
 
-  async updateTransaction(id: string, tx: Partial<Transaction>): Promise<Transaction> {
+  async updateTransaction(id: string, tx: Partial<Transaction> | FormData): Promise<Transaction> {
+    const isFormData = typeof FormData !== "undefined" && tx instanceof FormData;
     const res = await fetch(`${API_BASE_URL}/transactions/${id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json", ...getAuthHeader() },
-      body: JSON.stringify(tx),
+      headers: {
+        ...(!isFormData ? { "Content-Type": "application/json" } : {}),
+        ...getAuthHeader(),
+      },
+      body: isFormData ? tx : JSON.stringify(tx),
     });
     if (!res.ok) throw new Error("Erro ao atualizar transação");
     return res.json();

@@ -16,6 +16,16 @@ const loginSchema = z.object({
   password: z.string().min(1, "A senha é obrigatória"),
 });
 
+export const defaultCategoriesData = () => [
+  { name: "Alimentação", icon: "🍽️", color: "hsl(25, 95%, 53%)", type: "expense" },
+  { name: "Transporte", icon: "🚗", color: "hsl(221, 83%, 53%)", type: "expense" },
+  { name: "Moradia", icon: "🏠", color: "hsl(262, 83%, 58%)", type: "expense" },
+  { name: "Entretenimento", icon: "🎬", color: "hsl(330, 81%, 60%)", type: "expense" },
+  { name: "Saúde", icon: "💊", color: "hsl(142, 71%, 45%)", type: "expense" },
+  { name: "Compras", icon: "🛍️", color: "hsl(38, 92%, 50%)", type: "expense" },
+  { name: "Contas", icon: "⚡", color: "hsl(199, 89%, 48%)", type: "expense" },
+];
+
 export const defaultCategoriesData = [
   { name: "Alimentação", icon: "🍽️", color: "hsl(25, 95%, 53%)", type: "expense" },
   { name: "Transporte", icon: "🚗", color: "hsl(221, 83%, 53%)", type: "expense" },
