@@ -16,16 +16,6 @@ const loginSchema = z.object({
   password: z.string().min(1, "A senha é obrigatória"),
 });
 
-export const defaultCategoriesData = () => [
-  { name: "Alimentação", icon: "🍽️", color: "hsl(25, 95%, 53%)", type: "expense" },
-  { name: "Transporte", icon: "🚗", color: "hsl(221, 83%, 53%)", type: "expense" },
-  { name: "Moradia", icon: "🏠", color: "hsl(262, 83%, 58%)", type: "expense" },
-  { name: "Entretenimento", icon: "🎬", color: "hsl(330, 81%, 60%)", type: "expense" },
-  { name: "Saúde", icon: "💊", color: "hsl(142, 71%, 45%)", type: "expense" },
-  { name: "Compras", icon: "🛍️", color: "hsl(38, 92%, 50%)", type: "expense" },
-  { name: "Contas", icon: "⚡", color: "hsl(199, 89%, 48%)", type: "expense" },
-];
-
 export const defaultCategoriesData = [
   { name: "Alimentação", icon: "🍽️", color: "hsl(25, 95%, 53%)", type: "expense" },
   { name: "Transporte", icon: "🚗", color: "hsl(221, 83%, 53%)", type: "expense" },
@@ -66,13 +56,13 @@ export async function register(req: Request, res: Response): Promise<void> {
     // Criptografa a senha com bcrypt
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Cria o usuário no banco de dados SQLite
+    // Cria o usuário no banco de dados
     const user = await prisma.user.create({
       data: {
         name,
         email: normalizedEmail,
         password: hashedPassword,
-        // Cria uma conta inicial padrão
+        role: "ADULT",
         accounts: {
           create: [
             { name: "Conta Principal", type: "bank", balance: 0 },
@@ -85,6 +75,9 @@ export async function register(req: Request, res: Response): Promise<void> {
         name: true,
         email: true,
         avatarUrl: true,
+        role: true,
+        parentId: true,
+        spendingLimit: true,
       },
     });
 
@@ -141,13 +134,18 @@ export async function login(req: Request, res: Response): Promise<void> {
     // Gera token JWT
     const token = jwt.sign({ userId: user.id }, getJwtSecret(), { expiresIn: "7d" });
 
+    const userPayload: Record<string, unknown> = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      avatarUrl: user.avatarUrl,
+    };
+    if (user.role !== undefined) userPayload.role = user.role;
+    if (user.parentId !== undefined) userPayload.parentId = user.parentId;
+    if (user.spendingLimit !== undefined) userPayload.spendingLimit = user.spendingLimit;
+
     res.json({
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        avatarUrl: user.avatarUrl,
-      },
+      user: userPayload,
       token,
       message: "Login efetuado com sucesso!",
     });
@@ -171,6 +169,9 @@ export async function me(req: AuthenticatedRequest, res: Response): Promise<void
         name: true,
         email: true,
         avatarUrl: true,
+        role: true,
+        parentId: true,
+        spendingLimit: true,
         createdAt: true,
       },
     });
