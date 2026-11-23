@@ -36,20 +36,28 @@ AppFinanceiroTest/
 
 ---
 
-## 🚀 Como Executar o Projeto
+## 🚀 Como Executar o Projeto (Qualquer PC / Plug-and-Play)
 
-Na raiz do projeto, você pode gerenciar tanto o `front` quanto o `back`:
+O projeto conta com um **bootstrap automático de ambiente** (`back/scripts/setup-env.js`) que mantém a segurança do repositório público (nenhuma senha ou chave real vai para o Git) e, ao mesmo tempo, permite rodar em qualquer computador novo com apenas 2 comandos:
 
 ```bash
-# Instalar dependências do frontend e backend
-npm --prefix front install --legacy-peer-deps
-npm --prefix back install
+# 1. Instala dependências (front + back), gera automaticamente o back/.env (se não existir)
+#    com uma chave JWT_SECRET criptográfica única da máquina e configura o banco local SQLite:
+npm run setup
 
-# Configurar banco de dados SQLite (Prisma Generate + Push + Seed)
-npm run setup:back
-
-# Rodar Frontend (http://localhost:8080) e Backend (http://localhost:3333) simultaneamente
+# 2. Sobe Frontend (http://localhost:8080) e Backend (http://localhost:3333) simultaneamente:
 npm run dev
+```
+
+> **Como funciona em outros PCs vs. Produção (Supabase/Render)?**
+> - **Em um PC novo (sem `.env`)**: Ao rodar `npm run setup`, `npm run setup:back` ou `npm run dev`, o script [`back/scripts/setup-env.js`](./back/scripts/setup-env.js) detecta que `back/.env` não existe e cria um automaticamente com `DATABASE_URL="file:./dev.db"` (SQLite local, sem precisar de servidor externo) e gera um `JWT_SECRET` aleatório de 256 bits (`crypto.randomBytes(32)`) exclusivo para aquela máquina.
+> - **Conectando ao PostgreSQL / Supabase**: Se o seu `back/.env` (ou variável de ambiente no Render) tiver uma URL `postgresql://...`, o script mantém suas credenciais intactas e ajusta automaticamente o provider do Prisma para `postgresql`.
+
+### Outros Comandos Úteis
+
+```bash
+# Configurar/atualizar apenas o banco de dados do backend (Prisma Generate + Push + Seed)
+npm run setup:back
 
 # Executar suíte completa de testes (Front + Back)
 npm run test
