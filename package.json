@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "postinstall": "npm --prefix front install --legacy-peer-deps",
+    "setup": "npm --prefix front install --legacy-peer-deps && npm --prefix back install && npm run setup:back",
     "dev": "npx concurrently \"npm run dev:front\" \"npm run dev:back\"",
     "dev:all": "npx concurrently \"npm run dev:front\" \"npm run dev:back\"",
     "dev:front": "npm run --prefix front dev",

@@ -5,7 +5,16 @@ export interface AuthenticatedRequest extends Request {
   userId?: string;
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || "finance_system_super_secret_jwt_key_2026_bolsocerto";
+export function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "test") {
+      return "test-only-ephemeral-secret";
+    }
+    throw new Error("Variável de ambiente obrigatória JWT_SECRET não está definida.");
+  }
+  return secret;
+}
 
 export function authMiddleware(
   req: AuthenticatedRequest,
@@ -28,7 +37,7 @@ export function authMiddleware(
   const token = parts[1];
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+    const decoded = jwt.verify(token, getJwtSecret()) as { userId: string };
     req.userId = decoded.userId;
     next();
   } catch (err) {
