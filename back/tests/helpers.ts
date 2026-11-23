@@ -42,8 +42,10 @@ const prismaMock = {
   user: {
     findUnique: vi.fn(),
     findFirst: vi.fn(),
+    findMany: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
+    delete: vi.fn(),
   },
   $transaction: vi.fn(async (cb) => {
     // Simula a execução da callback passada para $transaction
