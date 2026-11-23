@@ -8,6 +8,7 @@ import accountsRoutes from "./routes/accounts.routes";
 import budgetsRoutes from "./routes/budgets.routes";
 import categoriesRoutes from "./routes/categories.routes";
 import goalsRoutes from "./routes/goals.routes";
+import parentalRoutes from "./routes/parental.routes";
 import path from 'path';
 
 const app = express();
@@ -53,6 +54,7 @@ app.use("/api/accounts", accountsRoutes);
 app.use("/api/budgets", budgetsRoutes);
 app.use("/api/categories", categoriesRoutes);
 app.use("/api/goals", goalsRoutes);
+app.use("/api/parental", parentalRoutes);
 
 app.listen(PORT, () => {
   console.log(`🚀 Servidor backend rodando com sucesso em http://localhost:${PORT}`);
