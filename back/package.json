@@ -2,18 +2,23 @@
   "name": "ledger-finance-backend",
   "version": "1.0.0",
   "private": true,
-  "description": "Backend API para Sistema de Gestão Financeira com SQLite e Prisma",
+  "description": "Backend API para Sistema de Gestão Financeira com SQLite/PostgreSQL e Prisma",
   "main": "src/server.ts",
   "type": "commonjs",
   "scripts": {
+    "ensure:env": "node scripts/setup-env.js",
+    "predev": "node scripts/setup-env.js",
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
+    "preprisma:generate": "node scripts/setup-env.js",
     "prisma:generate": "prisma generate",
+    "preprisma:push": "node scripts/setup-env.js",
     "prisma:push": "prisma db push",
+    "preprisma:seed": "node scripts/setup-env.js",
     "prisma:seed": "tsx prisma/seed.ts",
     "prisma:studio": "prisma studio",
-    "setup": "npm run prisma:generate && npm run prisma:push && npm run prisma:seed",
+    "setup": "npm run ensure:env && npm run prisma:generate && npm run prisma:push && npm run prisma:seed",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage"
   },
@@ -32,10 +37,10 @@
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^22.13.10",
+    "@vitest/coverage-v8": "^3.0.9",
     "prisma": "^6.4.1",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",
-    "vitest": "^3.0.9",
-    "@vitest/coverage-v8": "^3.0.9"
+    "vitest": "^3.0.9"
   }
 }
